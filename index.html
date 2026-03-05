@@ -1,17 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>My First Website</title>
+    <title>Random Number Gambling Game</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>this is my website</h1>
-    <p>If you see this, GitHub Pages works.</p>
+    <div class="container">
+        <h1>🎰 Guess the Number Game</h1>
+        <p>I'm thinking of a number between 1 and 100. Can you guess it?</p>
+        
+        <div class="game-box">
+            <input type="number" id="guessInput" min="1" max="100" placeholder="Enter your guess...">
+            <button id="guessBtn">Guess</button>
+        </div>
+        
+        <div id="feedback" class="feedback"></div>
+        <div id="attempts" class="attempts">Attempts: 0</div>
+        
+        <button id="resetBtn" class="reset-btn">New Game</button>
+    </div>
 
-    <!-- give the button an id instead of inline onclick -->
-    <button id="myButton">Click me</button>
-
-    <!-- load the external script just before </body> -->
     <script src="scripts.js"></script>
 </body>
 </html>
