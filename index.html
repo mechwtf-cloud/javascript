@@ -6,8 +6,8 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎰 High Roller Number Game</h1>
-        <p>Guess the number between 1-10 and win big! 💰</p>
+        <h1>🪙 Coin Flip Gambling Game</h1>
+        <p>Bet on Heads or Tails and double your money! 💰</p>
         
         <div class="stats-bar">
             <div class="stat">
@@ -30,8 +30,10 @@
         
         <div class="game-box" id="gameBox" style="display: none;">
             <p class="odds-display">Win 2x your bet!</p>
-            <input type="number" id="guessInput" min="1" max="10" placeholder="Enter your guess...">
-            <button id="guessBtn">Guess</button>
+            <div class="coin-options">
+                <button id="headsBtn" class="coin-btn">🪙 Heads</button>
+                <button id="tailsBtn" class="coin-btn">🪙 Tails</button>
+            </div>
         </div>
         
         <div id="feedback" class="feedback"></div>
