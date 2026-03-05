@@ -48,7 +48,7 @@ window.addEventListener('DOMContentLoaded', () => {
     betStatusDiv.className = 'active';
 
     // Start the game
-    secretNumber = Math.floor(Math.random() * 100) + 1;
+    secretNumber = Math.floor(Math.random() * 10) + 1;
     gameActive = true;
     gameBox.style.display = 'block';
     betInputDiv.style.display = 'none';
@@ -65,8 +65,8 @@ window.addEventListener('DOMContentLoaded', () => {
     const guess = parseInt(guessInput.value);
 
     // Validation
-    if (isNaN(guess) || guess < 1 || guess > 100) {
-      feedbackDiv.textContent = '⚠️ Please enter a number between 1 and 100';
+    if (isNaN(guess) || guess < 1 || guess > 10) {
+      feedbackDiv.textContent = '⚠️ Please enter a number between 1 and 10';
       feedbackDiv.className = 'error';
       return;
     }
