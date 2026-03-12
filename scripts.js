@@ -1,61 +1,17 @@
-var userName;
+const btn = document.getElementById("startBtn");
+const output = document.getElementById("output");
 
-// hlavná funkcia
+btn.onclick = startProgram;
+
 function startProgram(){
 
-    userName = prompt("Ako sa voláš?", "Jano");
+    let name = prompt("Name?");
+    let age = prompt("Age?");
 
-    alert("Ahoj " + userName);
-
-    var isAdmin = confirm("Si admin?");
-    alert("Admin status: " + isAdmin);
-
-    // funkcia s parametrami
-    showMessage(userName, "Vitaj v programe");
-
-    // funkcia s return
-    var result = sum(5,3);
-    alert("Súčet je: " + result);
-
-    // operátory
-    var x = 10;
-    var y = 3;
-
-    alert("Odčítanie: " + (x - y));
-    alert("Zvyšok po delení: " + (x % y));
-
-    // if else
-    if(x > y){
-        alert("x je väčšie ako y");
-    } else{
-        alert("x nie je väčšie");
+    if(age >= 18){
+        output.textContent = name + " is an adult";
+    }else{
+        output.textContent = name + " is under 18";
     }
 
-    // while cyklus
-    var i = 0;
-    while(i < 3){
-        alert("While cyklus: " + i);
-        i++;
-    }
-
-    // for cyklus
-    for(var j = 0; j < 3; j++){
-        alert("For cyklus: " + j);
-    }
-
-    document.getElementById("output").innerHTML =
-    "Program bol spustený používateľom " + userName;
-}
-
-
-// funkcia s parametrami
-function showMessage(from, text){
-    from = "**" + from + "**";
-    alert(from + ": " + text);
-}
-
-
-// funkcia s return
-function sum(a,b){
-    return a + b;
 }
