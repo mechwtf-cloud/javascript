@@ -1,48 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Random Number Gambling Game</title>
+    <title>JavaScript Projekt</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <div class="container">
-        <h1>🪙 Coin Flip Gambling Game</h1>
-        <p>Bet on Heads or Tails and double your money! 💰</p>
-        
-        <div class="stats-bar">
-            <div class="stat">
-                <span class="label">Balance:</span>
-                <span id="balance" class="balance-amount">$1,000</span>
-            </div>
-            <div class="stat">
-                <span class="label">Bet:</span>
-                <span id="currentBet" class="bet-amount">$0</span>
-            </div>
-        </div>
-        
-        <div class="betting-box">
-            <label for="betInput">How much do you want to bet?</label>
-            <input type="number" id="betInput" min="10" step="10" placeholder="$10 minimum...">
-            <button id="placeBetBtn">Place Bet</button>
-        </div>
-        
-        <div id="betStatus" class="bet-status"></div>
-        
-        <div class="game-box" id="gameBox" style="display: none;">
-            <p class="odds-display">Win 2x your bet!</p>
-            <div class="coin-options">
-                <button id="headsBtn" class="coin-btn">🪙 Heads</button>
-                <button id="tailsBtn" class="coin-btn">🪙 Tails</button>
-            </div>
-        </div>
-        
-        <div id="feedback" class="feedback"></div>
-        <div id="attempts" class="attempts"></div>
-        
-        <button id="resetBtn" class="reset-btn" style="display: none;">Play Again</button>
-        <button id="cashOutBtn" class="cashout-btn" style="display: none;">Cash Out</button>
-    </div>
 
-    <script src="scripts.js"></script>
+<body>
+
+<h1>JavaScript Demo</h1>
+
+<button onclick="startProgram()">Spustiť program</button>
+
+<div id="output"></div>
+
+<script src="scripts.js"></script>
+
 </body>
 </html>
