@@ -1,27 +1,39 @@
 body{
-    font-family: Arial;
-    background-color: #f4f4f4;
-    text-align: center;
+    margin:0;
+    font-family: Inter, sans-serif;
+    background:#0f0f0f;
+    color:white;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.app{
+    text-align:center;
 }
 
 h1{
-    color: #333;
+    font-weight:500;
+    margin-bottom:20px;
 }
 
 button{
-    padding: 10px 20px;
-    font-size: 18px;
-    background: blue;
-    color: white;
-    border: none;
-    cursor: pointer;
+    padding:12px 26px;
+    font-size:16px;
+    border-radius:6px;
+    border:none;
+    background:#2563eb;
+    color:white;
+    cursor:pointer;
 }
 
 button:hover{
-    background: darkblue;
+    background:#1d4ed8;
 }
 
 #output{
-    margin-top: 20px;
-    font-size: 20px;
+    margin-top:20px;
+    opacity:0.8;
 }
