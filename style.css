@@ -1,39 +1,52 @@
-body{
-    margin:0;
-    font-family: Inter, sans-serif;
-    background:#0f0f0f;
-    color:white;
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #0f172a, #1e3a8a);
+    color: white;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
 }
 
-.app{
-    text-align:center;
+h1 {
+    margin-bottom: 20px;
 }
 
-h1{
-    font-weight:500;
-    margin-bottom:20px;
+.controls {
+    margin-bottom: 20px;
 }
 
-button{
-    padding:12px 26px;
-    font-size:16px;
-    border-radius:6px;
-    border:none;
-    background:#2563eb;
-    color:white;
-    cursor:pointer;
+select, button {
+    padding: 10px;
+    margin: 5px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
 }
 
-button:hover{
-    background:#1d4ed8;
+button {
+    background: #3b82f6;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
 }
 
-#output{
-    margin-top:20px;
-    opacity:0.8;
+button:hover {
+    background: #2563eb;
+}
+
+#output {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.box {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border-radius: 10px;
 }
