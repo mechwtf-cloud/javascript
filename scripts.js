@@ -1,61 +1,73 @@
-var userName;
+function welcomeUser(){
 
-// hlavná funkcia
-function startProgram(){
+var name = prompt("Ako sa voláš?");
 
-    userName = prompt("Ako sa voláš?", "Jano");
+if(name != null){
 
-    alert("Ahoj " + userName);
+alert("Ahoj " + name);
 
-    var isAdmin = confirm("Si admin?");
-    alert("Admin status: " + isAdmin);
+}
 
-    // funkcia s parametrami
-    showMessage(userName, "Vitaj v programe");
-
-    // funkcia s return
-    var result = sum(5,3);
-    alert("Súčet je: " + result);
-
-    // operátory
-    var x = 10;
-    var y = 3;
-
-    alert("Odčítanie: " + (x - y));
-    alert("Zvyšok po delení: " + (x % y));
-
-    // if else
-    if(x > y){
-        alert("x je väčšie ako y");
-    } else{
-        alert("x nie je väčšie");
-    }
-
-    // while cyklus
-    var i = 0;
-    while(i < 3){
-        alert("While cyklus: " + i);
-        i++;
-    }
-
-    // for cyklus
-    for(var j = 0; j < 3; j++){
-        alert("For cyklus: " + j);
-    }
-
-    document.getElementById("output").innerHTML =
-    "Program bol spustený používateľom " + userName;
 }
 
 
-// funkcia s parametrami
-function showMessage(from, text){
-    from = "**" + from + "**";
-    alert(from + ": " + text);
+function checkAge(){
+
+var age = prompt("Koľko máš rokov?");
+
+if(age >= 18){
+
+alert("Máš prístup");
+
+}
+
+else{
+
+alert("Si príliš mladý");
+
+}
+
 }
 
 
-// funkcia s return
-function sum(a,b){
-    return a + b;
+function showNumbers(){
+
+for(var i = 1; i <= 5; i++){
+
+alert("Číslo: " + i);
+
+}
+
+}
+
+
+function sumNumbers(){
+
+var a = Number(document.getElementById("a").value);
+var b = Number(document.getElementById("b").value);
+
+var result = a + b;
+
+document.getElementById("result").innerHTML = "Výsledok: " + result;
+
+}
+
+
+function changeText(){
+
+var text = document.getElementById("text");
+
+text.innerHTML = "Text sa zmenil!";
+
+}
+
+
+function changeColor(){
+
+var r = Math.floor(Math.random()*255);
+var g = Math.floor(Math.random()*255);
+var b = Math.floor(Math.random()*255);
+
+document.body.style.background = "rgb("+r+","+g+","+b+")";
+
 }
