@@ -1,73 +1,50 @@
-function welcomeUser(){
+function generateSquares() {
+    const count = document.getElementById("count").value;
+    const output = document.getElementById("output");
 
-var name = prompt("Ako sa voláš?");
+    output.innerHTML = "";
 
-if(name != null){
+    for (let i = 1; i <= count; i++) {
+        const div = document.createElement("div");
+        div.classList.add("box");
 
-alert("Ahoj " + name);
+        // random farba
+        div.style.backgroundColor = getRandomColor();
+        div.textContent = i;
 
+        output.appendChild(div);
+    }
 }
 
+function generateNumbers() {
+    const count = document.getElementById("count").value;
+    const output = document.getElementById("output");
+
+    output.innerHTML = "";
+
+    for (let i = 1; i <= count; i++) {
+        const div = document.createElement("div");
+        div.classList.add("box");
+
+        div.style.backgroundColor = "#111827";
+        div.style.color = "#22c55e";
+
+        // rastúca veľkosť textu
+        div.style.fontSize = (10 + i * 2) + "px";
+
+        div.textContent = i;
+
+        output.appendChild(div);
+    }
 }
 
+function getRandomColor() {
+    const letters = "0123456789ABCDEF";
+    let color = "#";
 
-function checkAge(){
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
 
-var age = prompt("Koľko máš rokov?");
-
-if(age >= 18){
-
-alert("Máš prístup");
-
-}
-
-else{
-
-alert("Si príliš mladý");
-
-}
-
-}
-
-
-function showNumbers(){
-
-for(var i = 1; i <= 5; i++){
-
-alert("Číslo: " + i);
-
-}
-
-}
-
-
-function sumNumbers(){
-
-var a = Number(document.getElementById("a").value);
-var b = Number(document.getElementById("b").value);
-
-var result = a + b;
-
-document.getElementById("result").innerHTML = "Výsledok: " + result;
-
-}
-
-
-function changeText(){
-
-var text = document.getElementById("text");
-
-text.innerHTML = "Text sa zmenil!";
-
-}
-
-
-function changeColor(){
-
-var r = Math.floor(Math.random()*255);
-var g = Math.floor(Math.random()*255);
-var b = Math.floor(Math.random()*255);
-
-document.body.style.background = "rgb("+r+","+g+","+b+")";
-
+    return color;
 }

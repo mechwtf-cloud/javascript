@@ -1,40 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="sk">
 <head>
-
-<meta charset="UTF-8">
-<title>JavaScript Projekt</title>
-
-<link rel="stylesheet" href="style.css">
-<script src="scripts.js"></script>
-
+    <meta charset="UTF-8">
+    <title>JS Projekt</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<h1>JavaScript Demo Projekt</h1>
+    <h1>🔥 JavaScript Generátor</h1>
 
-<button onclick="welcomeUser()">Privítanie</button>
-<button onclick="checkAge()">Kontrola veku</button>
-<button onclick="showNumbers()">Cyklus</button>
+    <div class="controls">
+        <select id="count">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+            <option value="25">25</option>
+        </select>
 
-<hr>
+        <button onclick="generateSquares()">Farebné štvorce</button>
+        <button onclick="generateNumbers()">Rastúce čísla</button>
+    </div>
 
-<h2>Kalkulačka</h2>
+    <div id="output"></div>
 
-<input id="a" type="number" value="0">
-<input id="b" type="number" value="0">
-
-<button onclick="sumNumbers()">Spočítaj</button>
-
-<p id="result">Výsledok:</p>
-
-<hr>
-
-<h2 id="text">Toto je text</h2>
-
-<button onclick="changeText()">Zmeniť text</button>
-<button onclick="changeColor()">Zmeniť farbu stránky</button>
-
+    <script src="script.js"></script>
 </body>
 </html>
