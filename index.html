@@ -1,21 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="sk">
 <head>
-<meta charset="UTF-8">
-<title>JS Demo</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>JS Projekt</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<div class="app">
-    <h1>Demo</h1>
+    <h1>🔥 JavaScript Generátor</h1>
 
-    <button id="startBtn">Run</button>
+    <div class="controls">
+        <select id="count">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+            <option value="25">25</option>
+        </select>
 
-    <p id="output"></p>
-</div>
+        <button onclick="generateSquares()">Farebné štvorce</button>
+        <button onclick="generateNumbers()">Rastúce čísla</button>
+    </div>
 
-<script src="scripts.js"></script>
+    <div id="output"></div>
+
+    <script src="script.js"></script>
 </body>
 </html>
