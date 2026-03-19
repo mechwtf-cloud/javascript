@@ -1,4 +1,3 @@
-alert("script je napojený");
 function generateSquares() {
     const count = document.getElementById("count").value;
     const output = document.getElementById("output");
@@ -9,9 +8,12 @@ function generateSquares() {
         const div = document.createElement("div");
         div.classList.add("box");
 
-        // random farba
-        div.style.backgroundColor = getRandomColor();
-        div.textContent = i;
+        // gradient farba
+        div.style.background = getGradient();
+        div.textContent = "🍔"; // emoji namiesto čísla
+
+        // delay animácie
+        div.style.animationDelay = (i * 0.05) + "s";
 
         output.appendChild(div);
     }
@@ -27,25 +29,30 @@ function generateNumbers() {
         const div = document.createElement("div");
         div.classList.add("box");
 
-        div.style.backgroundColor = "#111827";
-        div.style.color = "#22c55e";
+        div.style.background = "#020617";
+        div.style.border = "2px solid #3b82f6";
+        div.style.color = "#38bdf8";
 
-        // rastúca veľkosť textu
-        div.style.fontSize = (10 + i * 2) + "px";
+        // rastúci font + glow efekt
+        div.style.fontSize = (12 + i * 2) + "px";
+        div.style.boxShadow = `0 0 ${i}px #3b82f6`;
 
         div.textContent = i;
+
+        div.style.animationDelay = (i * 0.05) + "s";
 
         output.appendChild(div);
     }
 }
 
-function getRandomColor() {
-    const letters = "0123456789ABCDEF";
-    let color = "#";
+function getGradient() {
+    const colors = [
+        ["#ff6a00", "#ee0979"],
+        ["#00c6ff", "#0072ff"],
+        ["#7f00ff", "#e100ff"],
+        ["#00ff87", "#60efff"]
+    ];
 
-    for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
-    }
-
-    return color;
+    const random = colors[Math.floor(Math.random() * colors.length)];
+    return `linear-gradient(135deg, ${random[0]}, ${random[1]})`;
 }
