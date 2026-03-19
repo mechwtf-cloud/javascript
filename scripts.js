@@ -1,3 +1,4 @@
+alert("script je napojený");
 function generateSquares() {
     const count = document.getElementById("count").value;
     const output = document.getElementById("output");
