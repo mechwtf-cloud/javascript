@@ -1,3 +1,4 @@
+console.log("JS ide");
 function generateSquares() {
     const count = document.getElementById("count").value;
     const output = document.getElementById("output");
