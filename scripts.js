@@ -2,6 +2,7 @@ window.addEventListener('DOMContentLoaded', () => {
   let balance = 1000;
   let currentBet = 0;
   let gameActive = false;
+  let spinCount = 0;
 
   const symbols = ['🍒', '🍋', '🍊', '⭐', '💎', '🏴‍☠️'];
   const payouts = {
@@ -62,6 +63,59 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function getMatchCount(r1, r2, r3) {
+    if (r1 === r2 && r2 === r3) return 3;
+    if (r1 === r2 || r2 === r3 || r1 === r3) return 2;
+    return 0;
+  }
+
+  function getWinChance() {
+    return spinCount < 3 ? 0.8 : 0.35;
+  }
+
+  function getRandomSymbol(exclude) {
+    const options = exclude ? symbols.filter((symbol) => symbol !== exclude) : symbols;
+    return options[Math.floor(Math.random() * options.length)];
+  }
+
+  function generateSpinResults() {
+    const winRoll = Math.random() < getWinChance();
+    if (!winRoll) {
+      const first = getRandomSymbol();
+      const second = getRandomSymbol(first);
+      const third = getRandomSymbol(first === second ? null : first === third ? null : first);
+      if (second === third || first === third || first === second) {
+        return generateSpinResults();
+      }
+      return [first, second, third];
+    }
+
+    const triple = Math.random() < 0.15;
+    const pairSymbol = getRandomSymbol();
+    if (triple) {
+      return [pairSymbol, pairSymbol, pairSymbol];
+    }
+
+    const oddSymbol = getRandomSymbol(pairSymbol);
+    const pairPositions = [[0, 1, 2], [0, 2, 1], [1, 2, 0]][Math.floor(Math.random() * 3)];
+    const results = [];
+    results[pairPositions[0]] = pairSymbol;
+    results[pairPositions[1]] = pairSymbol;
+    results[pairPositions[2]] = oddSymbol;
+    return results;
+  }
+
+  function showMatchPreview(r1, r2, r3) {
+    const matches = getMatchCount(r1, r2, r3);
+    if (matches === 3) {
+      setFeedback('💥 You got 3 matches! Jackpot incoming...', 'info');
+    } else if (matches === 2) {
+      setFeedback('✨ You got 2 matches! Nice!', 'info');
+    } else {
+      setFeedback('😬 No matches this time. Let’s see how it lands...', 'info');
+    }
+  }
+
   function placeBet() {
     const betAmount = parseInt(betInput.value, 10);
 
@@ -98,6 +152,7 @@ window.addEventListener('DOMContentLoaded', () => {
     clearMatchedReels();
     spinBtn.disabled = true;
     gameActive = false;
+    setFeedback('⚓️ Spinning the reels...','info');
     reel1.classList.add('spinning');
     reel2.classList.add('spinning');
     reel3.classList.add('spinning');
@@ -105,11 +160,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const spinInterval = 80;
     const stopTimes = [1800, 2200, 2600];
     const intervals = [null, null, null];
-    const results = [
-      symbols[Math.floor(Math.random() * symbols.length)],
-      symbols[Math.floor(Math.random() * symbols.length)],
-      symbols[Math.floor(Math.random() * symbols.length)]
-    ];
+    const results = generateSpinResults();
     let reelsStopped = 0;
 
     function stopReel(index) {
@@ -129,7 +180,9 @@ window.addEventListener('DOMContentLoaded', () => {
       }
       reelsStopped += 1;
       if (reelsStopped === 3) {
-        checkWin(results[0], results[1], results[2]);
+        spinCount += 1;
+        showMatchPreview(results[0], results[1], results[2]);
+        setTimeout(() => checkWin(results[0], results[1], results[2]), 700);
       }
     }
 
@@ -146,56 +199,3 @@ window.addEventListener('DOMContentLoaded', () => {
     let message = '';
 
     const triple = r1 === r2 && r2 === r3;
-    const pair = r1 === r2 || r2 === r3 || r1 === r3;
-
-    if (triple) {
-      winnings = currentBet * payouts[r1];
-      message = `🎉 JACKPOT! Three ${r1} win $${winnings}!`;
-      betStatusDiv.textContent = `🏆 You won big!`;
-      setFeedback(message, 'win');
-    } else if (pair) {
-      winnings = currentBet * 2;
-      message = `👍 Two matches! You win $${winnings}!`;
-      betStatusDiv.textContent = `🎊 Nice win!`;
-      setFeedback(message, 'win');
-    } else {
-      message = `😞 No matches. Better luck next time!`;
-      betStatusDiv.textContent = `❌ You lost the bet.`;
-      setFeedback(message, 'lose');
-    }
-
-    if (winnings > 0) {
-      balance += winnings;
-    }
-
-    if (triple || pair) {
-      highlightMatchedReels(r1, r2, r3);
-    } else {
-      clearMatchedReels();
-    }
-
-    currentBet = 0;
-    updateBalance();
-    resetBtn.style.display = 'inline-block';
-
-    if (balance <= 0) {
-      resetBtn.textContent = 'Game Over';
-      cashOutBtn.style.display = 'inline-block';
-    } else {
-      resetBtn.textContent = 'Play Again';
-      cashOutBtn.style.display = 'inline-block';
-    }
-  }
-
-  function playAgain() {
-    if (balance <= 0) {
-      setFeedback('💀 You are out of gold. Cash out to end the adventure.', 'error');
-      betInputDiv.style.display = 'none';
-      resetBtn.style.display = 'none';
-      return;
-    }
-
-    gameBox.style.display = 'none';
-    betInputDiv.style.display = 'block';
-    betStatusDiv.textContent = '';
-    betStatusDiv.className = 'bet-status';
