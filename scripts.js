@@ -79,12 +79,15 @@ window.addEventListener('DOMContentLoaded', () => {
     const spinInterval = 80;
     const stopTimes = [1800, 2200, 2600];
     const intervals = [null, null, null];
-    const results = [null, null, null];
+    const results = [
+      symbols[Math.floor(Math.random() * symbols.length)],
+      symbols[Math.floor(Math.random() * symbols.length)],
+      symbols[Math.floor(Math.random() * symbols.length)]
+    ];
 
     function stopReel(index) {
       clearInterval(intervals[index]);
-      const finalSymbol = symbols[Math.floor(Math.random() * symbols.length)];
-      results[index] = finalSymbol;
+      const finalSymbol = results[index];
       if (index === 0) {
         reel1.textContent = finalSymbol;
         reel1.classList.remove('spinning');
