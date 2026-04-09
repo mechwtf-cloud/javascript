@@ -71,25 +71,33 @@ window.addEventListener('DOMContentLoaded', () => {
     if (!gameActive) return;
 
     spinBtn.disabled = true;
-    reel1.classList.add('spinning');
-    reel2.classList.add('spinning');
-    reel3.classList.add('spinning');
+    gameActive = false;
 
-    setTimeout(() => {
-      const result1 = symbols[Math.floor(Math.random() * symbols.length)];
-      const result2 = symbols[Math.floor(Math.random() * symbols.length)];
-      const result3 = symbols[Math.floor(Math.random() * symbols.length)];
+    // Start spinning animation
+    const spinDuration = 2000; // 2 seconds
+    const spinInterval = 100; // Change symbols every 100ms
+    let spinTime = 0;
 
-      reel1.textContent = result1;
-      reel2.textContent = result2;
-      reel3.textContent = result3;
+    const spinAnimation = setInterval(() => {
+      reel1.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+      reel2.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+      reel3.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+      spinTime += spinInterval;
 
-      reel1.classList.remove('spinning');
-      reel2.classList.remove('spinning');
-      reel3.classList.remove('spinning');
+      if (spinTime >= spinDuration) {
+        clearInterval(spinAnimation);
+        // Set final results
+        const result1 = symbols[Math.floor(Math.random() * symbols.length)];
+        const result2 = symbols[Math.floor(Math.random() * symbols.length)];
+        const result3 = symbols[Math.floor(Math.random() * symbols.length)];
 
-      checkWin(result1, result2, result3);
-    }, 1000);
+        reel1.textContent = result1;
+        reel2.textContent = result2;
+        reel3.textContent = result3;
+
+        checkWin(result1, result2, result3);
+      }
+    }, spinInterval);
   }
 
   function checkWin(r1, r2, r3) {
