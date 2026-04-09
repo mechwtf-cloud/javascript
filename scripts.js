@@ -85,9 +85,18 @@ window.addEventListener('DOMContentLoaded', () => {
       clearInterval(intervals[index]);
       const finalSymbol = symbols[Math.floor(Math.random() * symbols.length)];
       results[index] = finalSymbol;
-      if (index === 0) reel1.classList.remove('spinning');
-      if (index === 1) reel2.classList.remove('spinning');
-      if (index === 2) reel3.classList.remove('spinning');
+      if (index === 0) {
+        reel1.textContent = finalSymbol;
+        reel1.classList.remove('spinning');
+      }
+      if (index === 1) {
+        reel2.textContent = finalSymbol;
+        reel2.classList.remove('spinning');
+      }
+      if (index === 2) {
+        reel3.textContent = finalSymbol;
+        reel3.classList.remove('spinning');
+      }
       if (results[0] && results[1] && results[2]) {
         checkWin(results[0], results[1], results[2]);
       }
@@ -178,3 +187,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
   spinBtn.addEventListener('click', () => {
     gameActive = true;
+    spinReels();
+  });
+
+  resetBtn.addEventListener('click', playAgain);
+  cashOutBtn.addEventListener('click', cashOut);
+
+  updateBalance();
+});
+
