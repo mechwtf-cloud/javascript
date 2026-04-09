@@ -103,20 +103,29 @@ window.addEventListener('DOMContentLoaded', () => {
 
   function checkWin(r1, r2, r3) {
     let winnings = 0;
+    let message = '';
 
-    if (r1 === r2 && r2 === r3) {
+    const triple = r1 === r2 && r2 === r3;
+    const pair = r1 === r2 || r2 === r3 || r1 === r3;
+
+    if (triple) {
       winnings = currentBet * payouts[r1];
-      balance += winnings;
-      setFeedback(`🎉 JACKPOT! Three ${r1} win $${winnings}!`, 'win');
+      message = `🎉 JACKPOT! Three ${r1} win $${winnings}!`;
       betStatusDiv.textContent = `🏆 You won big!`;
-    } else if (r1 === r2 || r2 === r3 || r1 === r3) {
-      winnings = currentBet * 1.5;
-      balance += winnings;
-      setFeedback(`👍 Two matches! You win $${winnings}!`, 'win');
+      setFeedback(message, 'win');
+    } else if (pair) {
+      winnings = currentBet * 2;
+      message = `👍 Two matches! You win $${winnings}!`;
       betStatusDiv.textContent = `🎊 Nice win!`;
+      setFeedback(message, 'win');
     } else {
-      setFeedback(`😞 No matches. Better luck next time!`, 'lose');
+      message = `😞 No matches. Better luck next time!`;
       betStatusDiv.textContent = `❌ You lost the bet.`;
+      setFeedback(message, 'lose');
+    }
+
+    if (winnings > 0) {
+      balance += winnings;
     }
 
     currentBet = 0;
@@ -169,12 +178,3 @@ window.addEventListener('DOMContentLoaded', () => {
 
   spinBtn.addEventListener('click', () => {
     gameActive = true;
-    spinReels();
-  });
-
-  resetBtn.addEventListener('click', playAgain);
-  cashOutBtn.addEventListener('click', cashOut);
-
-  updateBalance();
-});
-
