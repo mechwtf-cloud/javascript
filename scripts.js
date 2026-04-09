@@ -72,32 +72,33 @@ window.addEventListener('DOMContentLoaded', () => {
 
     spinBtn.disabled = true;
     gameActive = false;
+    reel1.classList.add('spinning');
+    reel2.classList.add('spinning');
+    reel3.classList.add('spinning');
 
-    // Start spinning animation
-    const spinDuration = 2000; // 2 seconds
-    const spinInterval = 100; // Change symbols every 100ms
-    let spinTime = 0;
+    const spinInterval = 80;
+    const stopTimes = [1800, 2200, 2600];
+    const intervals = [null, null, null];
+    const results = [null, null, null];
 
-    const spinAnimation = setInterval(() => {
-      reel1.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-      reel2.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-      reel3.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-      spinTime += spinInterval;
-
-      if (spinTime >= spinDuration) {
-        clearInterval(spinAnimation);
-        // Set final results
-        const result1 = symbols[Math.floor(Math.random() * symbols.length)];
-        const result2 = symbols[Math.floor(Math.random() * symbols.length)];
-        const result3 = symbols[Math.floor(Math.random() * symbols.length)];
-
-        reel1.textContent = result1;
-        reel2.textContent = result2;
-        reel3.textContent = result3;
-
-        checkWin(result1, result2, result3);
+    function stopReel(index) {
+      clearInterval(intervals[index]);
+      const finalSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+      results[index] = finalSymbol;
+      if (index === 0) reel1.classList.remove('spinning');
+      if (index === 1) reel2.classList.remove('spinning');
+      if (index === 2) reel3.classList.remove('spinning');
+      if (results[0] && results[1] && results[2]) {
+        checkWin(results[0], results[1], results[2]);
       }
-    }, spinInterval);
+    }
+
+    [reel1, reel2, reel3].forEach((reel, index) => {
+      intervals[index] = setInterval(() => {
+        reel.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+      }, spinInterval);
+      setTimeout(() => stopReel(index), stopTimes[index]);
+    });
   }
 
   function checkWin(r1, r2, r3) {
