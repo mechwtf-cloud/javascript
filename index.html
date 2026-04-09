@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Treasure Hunt Adventure</title>
+    <title>Pirate Slots Adventure</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>🏴‍☠️ Treasure Hunt Adventure</h1>
-        <p>Choose a chest and uncover hidden treasure. Bet your gold and win 3× your stake!</p>
+        <h1>🏴‍☠️ Pirate Slots Adventure</h1>
+        <p>Spin the reels and strike gold! Match symbols to win big!</p>
 
         <div class="stats-bar">
             <div class="stat">
@@ -16,32 +16,31 @@
                 <span id="balance" class="balance-amount">$1,000</span>
             </div>
             <div class="stat">
-                <span class="label">Risk:</span>
+                <span class="label">Bet:</span>
                 <span id="currentBet" class="bet-amount">$0</span>
             </div>
         </div>
 
         <div class="betting-box">
-            <label for="betInput">How much gold will you risk?</label>
+            <label for="betInput">How much gold will you bet?</label>
             <input type="number" id="betInput" min="10" step="10" placeholder="Enter 10 or more">
-            <button id="placeBetBtn">Set Sail</button>
+            <button id="placeBetBtn">Spin!</button>
         </div>
 
         <div id="betStatus" class="bet-status"></div>
 
         <div class="game-box" id="gameBox" style="display: none;">
-            <p class="odds-display">One chest hides treasure. Pick carefully!</p>
-            <div class="chest-grid">
-                <button class="chest-btn" data-chest="1">Chest 1</button>
-                <button class="chest-btn" data-chest="2">Chest 2</button>
-                <button class="chest-btn" data-chest="3">Chest 3</button>
-                <button class="chest-btn" data-chest="4">Chest 4</button>
+            <div class="slot-machine">
+                <div class="reel" id="reel1">🍒</div>
+                <div class="reel" id="reel2">🍋</div>
+                <div class="reel" id="reel3">🍊</div>
             </div>
+            <button id="spinBtn" class="spin-btn">Spin the Reels!</button>
         </div>
 
         <div id="feedback" class="feedback"></div>
 
-        <button id="resetBtn" class="reset-btn" style="display: none;">Try Again</button>
+        <button id="resetBtn" class="reset-btn" style="display: none;">Play Again</button>
         <button id="cashOutBtn" class="cashout-btn" style="display: none;">Cash Out</button>
     </div>
 
