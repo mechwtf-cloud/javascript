@@ -1,205 +1,322 @@
+body {
 <<<<<<< HEAD
-window.addEventListener('DOMContentLoaded', () => {
-  let balance = 1000;
-  let currentBet = 0;
-  let treasureChest = null;
-  let gameActive = false;
-
-  const balanceDiv = document.getElementById('balance');
-  const currentBetDiv = document.getElementById('currentBet');
-  const betStatusDiv = document.getElementById('betStatus');
-  const betInputDiv = document.querySelector('.betting-box');
-  const betInput = document.getElementById('betInput');
-  const placeBetBtn = document.getElementById('placeBetBtn');
-  const gameBox = document.getElementById('gameBox');
-  const chestButtons = Array.from(document.querySelectorAll('.chest-btn'));
-  const resetBtn = document.getElementById('resetBtn');
-  const cashOutBtn = document.getElementById('cashOutBtn');
-  const feedbackDiv = document.getElementById('feedback');
-
-  function updateBalance() {
-    balanceDiv.textContent = '$' + balance.toLocaleString();
-    currentBetDiv.textContent = '$' + currentBet.toLocaleString();
-  }
-
-  function setFeedback(text, status) {
-    feedbackDiv.textContent = text;
-    feedbackDiv.className = 'feedback ' + status;
-  }
-
-  function enableChests(enabled) {
-    chestButtons.forEach((button) => {
-      button.disabled = !enabled;
-    });
-  }
-
-  function placeBet() {
-    const betAmount = parseInt(betInput.value, 10);
-
-    if (isNaN(betAmount) || betAmount < 10) {
-      betStatusDiv.textContent = '⚠️ Minimum bet is $10';
-      betStatusDiv.className = 'bet-status';
-      return;
-=======
-function generateSquares() {
-    const count = document.getElementById("count").value;
-    const output = document.getElementById("output");
-
-    output.innerHTML = "";
-
-    for (let i = 1; i <= count; i++) {
-        const div = document.createElement("div");
-        div.classList.add("box");
-
-        // gradient farba
-        div.style.background = getGradient();
-        div.textContent = "🍔"; // emoji namiesto čísla
-
-        // delay animácie
-        div.style.animationDelay = (i * 0.05) + "s";
-
-        output.appendChild(div);
->>>>>>> 096ecf99d66c711c13500722a107ce9c9a267b69
-    }
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 2rem;
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #2b3b55 0%, #081520 70%);
+    color: #f5f5f5;
 }
 
-<<<<<<< HEAD
-    if (betAmount > balance) {
-      betStatusDiv.textContent = '⚠️ You do not have enough gold!';
-      betStatusDiv.className = 'bet-status';
-      return;
-=======
-function generateNumbers() {
-    const count = document.getElementById("count").value;
-    const output = document.getElementById("output");
-
-    output.innerHTML = "";
-
-    for (let i = 1; i <= count; i++) {
-        const div = document.createElement("div");
-        div.classList.add("box");
-
-        div.style.background = "#020617";
-        div.style.border = "2px solid #3b82f6";
-        div.style.color = "#38bdf8";
-
-        // rastúci font + glow efekt
-        div.style.fontSize = (12 + i * 2) + "px";
-        div.style.boxShadow = `0 0 ${i}px #3b82f6`;
-
-        div.textContent = i;
-
-        div.style.animationDelay = (i * 0.05) + "s";
-
-        output.appendChild(div);
->>>>>>> 096ecf99d66c711c13500722a107ce9c9a267b69
-    }
+.container {
+    max-width: 560px;
+    margin: 0 auto;
+    background: rgba(15, 27, 46, 0.95);
+    padding: 2rem;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 235, 156, 0.15);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
 }
 
-<<<<<<< HEAD
-    currentBet = betAmount;
-    balance -= betAmount;
-    updateBalance();
+h1 {
+    color: #f9d66b;
+    margin-top: 0;
+    letter-spacing: 1px;
+}
 
-    treasureChest = Math.floor(Math.random() * 4) + 1;
-    gameActive = true;
-    betStatusDiv.textContent = `🗺️ Bet placed: $${betAmount}. Choose a chest!`;
-    betStatusDiv.className = 'bet-status active';
-    gameBox.style.display = 'block';
-    betInputDiv.style.display = 'none';
-    setFeedback('', 'info');
-    enableChests(true);
-    resetBtn.style.display = 'none';
-    cashOutBtn.style.display = 'none';
-  }
+p {
+    color: #d8d8d8;
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+}
 
-  function chooseChest(selected) {
-    if (!gameActive) return;
+.stats-bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 1rem;
+    border-radius: 14px;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
 
-    enableChests(false);
-    gameActive = false;
+.stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
-    if (selected === treasureChest) {
-      const winnings = currentBet * 3;
-      balance += winnings;
-      setFeedback(`🎉 Treasure found! Chest ${selected} held the treasure. You win $${winnings}!`, 'win');
-      betStatusDiv.textContent = `🏆 Victory! You found the treasure.`;
-      betStatusDiv.className = 'bet-status active';
-    } else {
-      setFeedback(`💔 Chest ${selected} was empty. The treasure was in chest ${treasureChest}.`, 'lose');
-      betStatusDiv.textContent = `❌ You lost the bet.`;
-      betStatusDiv.className = 'bet-status';
-    }
+.stat .label {
+    color: #c5c8d1;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
 
-    currentBet = 0;
-    updateBalance();
-    resetBtn.style.display = 'inline-block';
+.balance-amount {
+    font-size: 1.9rem;
+    font-weight: 900;
+    color: #f9d66b;
+}
 
-    if (balance <= 0) {
-      resetBtn.textContent = 'Game Over';
-      cashOutBtn.style.display = 'inline-block';
-    } else {
-      resetBtn.textContent = 'Try Again';
-      cashOutBtn.style.display = 'inline-block';
-    }
-  }
+.bet-amount {
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #f1a661;
+}
 
-  function playAgain() {
-    if (balance <= 0) {
-      setFeedback('💀 You are out of gold. Cash out to end the adventure.', 'error');
-      betInputDiv.style.display = 'none';
-      resetBtn.style.display = 'none';
-      return;
-    }
+.betting-box {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(249, 214, 107, 0.2);
+}
 
-    gameBox.style.display = 'none';
-    betInputDiv.style.display = 'block';
-    betStatusDiv.textContent = '';
-    betStatusDiv.className = 'bet-status';
-    setFeedback('', 'info');
-    betInput.value = '';
-    resetBtn.style.display = 'none';
-    cashOutBtn.style.display = 'inline-block';
-    currentBet = 0;
-    updateBalance();
-  }
+.betting-box label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+    color: #f1f0e8;
+}
 
-  function cashOut() {
-    setFeedback(`📦 You cashed out with $${balance.toLocaleString()} gold. Well played!`, 'info');
-    betStatusDiv.textContent = '';
-    betStatusDiv.className = 'bet-status';
-    betInputDiv.style.display = 'none';
-    gameBox.style.display = 'none';
-    resetBtn.style.display = 'none';
-    cashOutBtn.style.display = 'none';
-  }
+input[type="number"] {
+    padding: 0.85rem;
+    font-size: 1rem;
+    width: 100%;
+    max-width: 260px;
+    border: 2px solid rgba(249, 214, 107, 0.4);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    background: rgba(255, 255, 255, 0.08);
+    color: #f5f5f5;
+}
 
-  placeBetBtn.addEventListener('click', placeBet);
-  betInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') placeBet();
-  });
+input[type="number"]::placeholder {
+    color: #c5c8d1;
+}
 
-  chestButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-      chooseChest(parseInt(button.dataset.chest, 10));
-    });
-  });
+input[type="number"]:focus {
+    outline: none;
+    border-color: #f9d66b;
+    box-shadow: 0 0 10px rgba(249, 214, 107, 0.25);
+}
 
-  resetBtn.addEventListener('click', playAgain);
-  cashOutBtn.addEventListener('click', cashOut);
+.bet-status {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ced4da;
+    margin-bottom: 1rem;
+    min-height: 2rem;
+}
 
-  updateBalance();
-});
+.bet-status.active {
+    color: #ffeaa7;
+    background: rgba(255, 234, 113, 0.12);
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+}
+
+.game-box {
+    margin: 2rem 0;
+}
+
+.odds-display {
+    background: rgba(255, 255, 255, 0.08);
+    color: #f9d66b;
+    padding: 1rem;
+    border-radius: 12px;
+    font-weight: 700;
+    margin-bottom: 1.2rem;
+}
+
+.chest-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.chest-btn {
+    padding: 1.15rem 0.75rem;
+    font-size: 1rem;
+    border-radius: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(180deg, #8b5e34 0%, #5a3715 100%);
+    color: #fff6dd;
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.15), 0 12px 30px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chest-btn:hover {
+    transform: translateY(-2px);
+    border-color: rgba(249, 214, 107, 0.45);
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.2), 0 14px 32px rgba(0, 0, 0, 0.28);
+}
+
+.chest-btn:disabled {
+    background: rgba(90, 60, 25, 0.35);
+    border-color: rgba(255, 255, 255, 0.05);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+button {
+    padding: 0.85rem 1.4rem;
+    font-size: 1rem;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.25s ease, transform 0.2s ease;
+    margin: 0.4rem;
+}
+
+button:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+button:disabled {
+    background-color: #5a5a5a;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+#placeBetBtn {
+    background-color: #f9d66b;
+    color: #1f1b10;
+}
+
+#placeBetBtn:hover {
+    background-color: #ffd858;
+}
+
+.reset-btn {
+    background-color: #4ba55d;
+}
+
+.reset-btn:hover {
+    background-color: #3a8c4a;
+}
+
+.cashout-btn {
+    background-color: #5a8dc9;
+}
+
+.cashout-btn:hover {
+    background-color: #4574ad;
+}
+
+.feedback {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 1.5rem 0;
+    min-height: 2.5rem;
+    padding: 1rem;
+    border-radius: 14px;
+}
+
+.feedback.error {
+    color: #f8d7da;
+    background-color: #6d1f33;
+    border: 1px solid #a23a53;
+}
+
+.feedback.win {
+    color: #153f1b;
+    background-color: #d4f7d4;
+    border: 1px solid #7ac27f;
+}
+
+.feedback.lose {
+    color: #3e1f28;
+    background-color: #f7d4d4;
+    border: 1px solid #d77c8e;
+}
+
+.feedback.info {
+    color: #fdf6e3;
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+
+.attempts {
+    font-size: 1.1rem;
+    color: #666;
+    margin: 1rem 0;
+}
 =======
-function getGradient() {
-    const colors = [
-        ["#ff6a00", "#ee0979"],
-        ["#00c6ff", "#0072ff"],
-        ["#7f00ff", "#e100ff"],
-        ["#00ff87", "#60efff"]
-    ];
+    font-family: Arial, sans-serif;
+    background: radial-gradient(circle at top, #0f172a, #020617);
+    color: white;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+}
 
-    const random = colors[Math.floor(Math.random() * colors.length)];
-    return `linear-gradient(135deg, ${random[0]}, ${random[1]})`;
+h1 {
+    margin-bottom: 20px;
+}
+
+.controls {
+    margin-bottom: 20px;
+}
+
+select, button {
+    padding: 10px 15px;
+    margin: 5px;
+    border-radius: 10px;
+    border: none;
+    font-size: 16px;
+}
+
+button {
+    background: linear-gradient(135deg, #3b82f6, #06b6d4);
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px #3b82f6;
+}
+
+#output {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.box {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border-radius: 15px;
+    transition: 0.3s;
+    animation: pop 0.4s ease;
+}
+
+.box:hover {
+    transform: scale(1.2) rotate(5deg);
+}
+
+@keyframes pop {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 >>>>>>> 096ecf99d66c711c13500722a107ce9c9a267b69
