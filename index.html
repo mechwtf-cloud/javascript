@@ -1,43 +1,46 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Random Number Gambling Game</title>
+    <title>Treasure Hunt Adventure</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>🎰 High Roller Number Game</h1>
-        <p>Guess the number between 1-100 and win big! 💰</p>
-        
+        <h1>🏴‍☠️ Treasure Hunt Adventure</h1>
+        <p>Choose a chest and uncover hidden treasure. Bet your gold and win 3× your stake!</p>
+
         <div class="stats-bar">
             <div class="stat">
-                <span class="label">Balance:</span>
+                <span class="label">Gold:</span>
                 <span id="balance" class="balance-amount">$1,000</span>
             </div>
             <div class="stat">
-                <span class="label">Bet:</span>
+                <span class="label">Risk:</span>
                 <span id="currentBet" class="bet-amount">$0</span>
             </div>
         </div>
-        
+
         <div class="betting-box">
-            <label for="betInput">How much do you want to bet?</label>
-            <input type="number" id="betInput" min="10" step="10" placeholder="$10 minimum...">
-            <button id="placeBetBtn">Place Bet</button>
+            <label for="betInput">How much gold will you risk?</label>
+            <input type="number" id="betInput" min="10" step="10" placeholder="Enter 10 or more">
+            <button id="placeBetBtn">Set Sail</button>
         </div>
-        
+
         <div id="betStatus" class="bet-status"></div>
-        
+
         <div class="game-box" id="gameBox" style="display: none;">
-            <p class="odds-display">Win 2x your bet!</p>
-            <input type="number" id="guessInput" min="1" max="100" placeholder="Enter your guess...">
-            <button id="guessBtn">Guess</button>
+            <p class="odds-display">One chest hides treasure. Pick carefully!</p>
+            <div class="chest-grid">
+                <button class="chest-btn" data-chest="1">Chest 1</button>
+                <button class="chest-btn" data-chest="2">Chest 2</button>
+                <button class="chest-btn" data-chest="3">Chest 3</button>
+                <button class="chest-btn" data-chest="4">Chest 4</button>
+            </div>
         </div>
-        
+
         <div id="feedback" class="feedback"></div>
-        <div id="attempts" class="attempts"></div>
-        
-        <button id="resetBtn" class="reset-btn" style="display: none;">Play Again</button>
+
+        <button id="resetBtn" class="reset-btn" style="display: none;">Try Again</button>
         <button id="cashOutBtn" class="cashout-btn" style="display: none;">Cash Out</button>
     </div>
 
