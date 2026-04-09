@@ -38,6 +38,30 @@ window.addEventListener('DOMContentLoaded', () => {
     feedbackDiv.className = 'feedback ' + status;
   }
 
+  function clearMatchedReels() {
+    [reel1, reel2, reel3].forEach((reel) => reel.classList.remove('matched'));
+  }
+
+  function highlightMatchedReels(r1, r2, r3) {
+    clearMatchedReels();
+    if (r1 === r2 && r2 === r3) {
+      [reel1, reel2, reel3].forEach((reel) => reel.classList.add('matched'));
+      return;
+    }
+    if (r1 === r2) {
+      reel1.classList.add('matched');
+      reel2.classList.add('matched');
+    }
+    if (r2 === r3) {
+      reel2.classList.add('matched');
+      reel3.classList.add('matched');
+    }
+    if (r1 === r3) {
+      reel1.classList.add('matched');
+      reel3.classList.add('matched');
+    }
+  }
+
   function placeBet() {
     const betAmount = parseInt(betInput.value, 10);
 
@@ -56,6 +80,7 @@ window.addEventListener('DOMContentLoaded', () => {
     currentBet = betAmount;
     balance -= betAmount;
     updateBalance();
+    clearMatchedReels();
 
     betStatusDiv.textContent = `🤑 Bet placed: $${betAmount}. Spin to win!`;
     betStatusDiv.className = 'bet-status active';
@@ -70,6 +95,7 @@ window.addEventListener('DOMContentLoaded', () => {
   function spinReels() {
     if (!gameActive) return;
 
+    clearMatchedReels();
     spinBtn.disabled = true;
     gameActive = false;
     reel1.classList.add('spinning');
@@ -84,6 +110,7 @@ window.addEventListener('DOMContentLoaded', () => {
       symbols[Math.floor(Math.random() * symbols.length)],
       symbols[Math.floor(Math.random() * symbols.length)]
     ];
+    let reelsStopped = 0;
 
     function stopReel(index) {
       clearInterval(intervals[index]);
@@ -100,7 +127,8 @@ window.addEventListener('DOMContentLoaded', () => {
         reel3.textContent = finalSymbol;
         reel3.classList.remove('spinning');
       }
-      if (results[0] && results[1] && results[2]) {
+      reelsStopped += 1;
+      if (reelsStopped === 3) {
         checkWin(results[0], results[1], results[2]);
       }
     }
@@ -140,6 +168,12 @@ window.addEventListener('DOMContentLoaded', () => {
       balance += winnings;
     }
 
+    if (triple || pair) {
+      highlightMatchedReels(r1, r2, r3);
+    } else {
+      clearMatchedReels();
+    }
+
     currentBet = 0;
     updateBalance();
     resetBtn.style.display = 'inline-block';
@@ -165,37 +199,3 @@ window.addEventListener('DOMContentLoaded', () => {
     betInputDiv.style.display = 'block';
     betStatusDiv.textContent = '';
     betStatusDiv.className = 'bet-status';
-    setFeedback('', 'info');
-    betInput.value = '';
-    resetBtn.style.display = 'none';
-    cashOutBtn.style.display = 'inline-block';
-    currentBet = 0;
-    updateBalance();
-  }
-
-  function cashOut() {
-    setFeedback(`📦 You cashed out with $${balance.toLocaleString()} gold. Well played!`, 'info');
-    betStatusDiv.textContent = '';
-    betStatusDiv.className = 'bet-status';
-    betInputDiv.style.display = 'none';
-    gameBox.style.display = 'none';
-    resetBtn.style.display = 'none';
-    cashOutBtn.style.display = 'none';
-  }
-
-  placeBetBtn.addEventListener('click', placeBet);
-  betInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') placeBet();
-  });
-
-  spinBtn.addEventListener('click', () => {
-    gameActive = true;
-    spinReels();
-  });
-
-  resetBtn.addEventListener('click', playAgain);
-  cashOutBtn.addEventListener('click', cashOut);
-
-  updateBalance();
-});
-
