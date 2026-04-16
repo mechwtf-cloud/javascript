@@ -1,7 +1,5 @@
 const laneConfig = [
-  { key: "Q", color: "#ff5e8f" },
   { key: "W", color: "#ff9f43" },
-  { key: "E", color: "#ffd54a" },
   { key: "A", color: "#58e5a2" },
   { key: "S", color: "#53c7ff" },
   { key: "D", color: "#b88cff" }
