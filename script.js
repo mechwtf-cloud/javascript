@@ -9,6 +9,9 @@ let spawnCooldown = 0;
 const game = document.getElementById("game");
 const feedback = document.getElementById("feedback");
 const scoreEl = document.getElementById("score");
+const GAME_HEIGHT = 650;
+const HIT_LINE = GAME_HEIGHT - 120;
+
 
 function randomColor() {
   return `hsl(${Math.random() * 360}, 100%, 60%)`;
@@ -53,12 +56,18 @@ function gameLoop() {
     }
   }
 }
-
 function resetGame() {
   gameRunning = false;
-  if (currentNote) currentNote.element.remove();
-  currentNote = null;
-  speed = 2;
+
+  if (currentNote) {
+    currentNote.element.remove();
+    currentNote = null;
+  }
+
+  feedback.textContent = "GAME OVER";
+
+  // stop everything cleanly
+  cancelAnimationFrame(gameLoopId);
 }
 
 function flashScreen(color) {
@@ -85,7 +94,7 @@ document.addEventListener("keydown", (e) => {
   const key = e.key.toUpperCase();
 
   if (key === currentNote.key) {
-    let distance = Math.abs(currentNote.y - 530);
+    let distance = Math.abs(currentNote.y - HIT_LINE);
 
     if (distance < 10) {
       feedback.textContent = "PERFECT!";
