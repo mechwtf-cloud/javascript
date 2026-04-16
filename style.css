@@ -1,83 +1,89 @@
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  color: white;
   overflow: hidden;
-
-  /* 🌈 animated background */
-  background: linear-gradient(-45deg, #ff00cc, #3333ff, #00ffcc, #ffcc00);
+  font-family: Arial;
+  background: linear-gradient(-45deg, #ff00cc, #00ffcc, #3300ff, #ffcc00);
   background-size: 400% 400%;
-  animation: bgMove 10s infinite linear;
+  animation: bg 8s infinite linear;
 }
 
-@keyframes bgMove {
+@keyframes bg {
   0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
 }
 
-/* 🎮 game container */
+/* UI TOP */
+#ui {
+  position: absolute;
+  top: 20px;
+  width: 100%;
+  text-align: center;
+  color: white;
+  z-index: 10;
+}
+
+#score {
+  font-size: 40px;
+  font-weight: bold;
+}
+
+#feedback {
+  font-size: 30px;
+  margin-top: 10px;
+}
+
+/* FULL SCREEN GAME AREA */
 #game {
-  position: relative;
-  height: 650px;
-  width: 320px;
-  margin: 40px auto;
-
-  border-radius: 20px;
-
-  /* glass / 3D panel look */
-  background: rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(10px);
-
-  box-shadow:
-    0 0 20px rgba(0,0,0,0.5),
-    inset 0 0 20px rgba(255,255,255,0.1);
-
-  overflow: hidden;
-  perspective: 800px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
 }
 
-/* 🎯 HIT LINE (IMPORTANT) */
+/* HIT LINE (REAL CENTER LINE) */
 #game::after {
   content: "";
   position: absolute;
-  bottom: 120px;
   left: 0;
   width: 100%;
-  height: 4px;
+  height: 6px;
+  bottom: 20vh;
 
   background: white;
-  box-shadow: 0 0 15px white;
+  box-shadow: 0 0 20px white;
 }
 
-/* 🎵 notes */
+/* NOTES */
 .note {
   position: absolute;
-  top: 0;
   left: 50%;
-  transform: translateX(-50%) rotateX(25deg);
-
-  font-size: 28px;
+  transform: translateX(-50%);
+  font-size: 40px;
   font-weight: bold;
 
-  padding: 10px 14px;
+  padding: 12px 18px;
   border-radius: 12px;
 
   border: 2px solid white;
 
-  /* glowing + 3D feel */
-  box-shadow: 0 0 20px rgba(255,255,255,0.4);
-
-  animation: floatNote 0.2s ease-out;
+  text-shadow: 0 0 10px black;
+  transition: transform 0.05s linear;
 }
 
-@keyframes floatNote {
-  from {
-    transform: translateX(-50%) translateZ(-100px) scale(0.8);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(-50%) translateZ(0px) scale(1);
-    opacity: 1;
-  }
+/* GAME OVER BIG SCREEN */
+#gameOver {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  font-size: 80px;
+  font-weight: bold;
+  color: red;
+  background: rgba(0,0,0,0.7);
+
+  z-index: 999;
 }
