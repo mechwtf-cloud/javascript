@@ -1,47 +1,64 @@
+const views = {
+  menu: document.getElementById("menuView"),
+  rhythm: document.getElementById("rhythmView"),
+  typing: document.getElementById("typingView")
+};
+
+const viewTitles = {
+  menu: "Choose a mode",
+  rhythm: "Pulse Grid",
+  typing: "Word Rush"
+};
+
+const viewLabelEl = document.getElementById("viewLabel");
+const menuButtonEl = document.getElementById("menuButton");
+const modeButtons = document.querySelectorAll("[data-view]");
+
+let activeView = "menu";
+
 const laneConfig = [
-  { key: "Q", color: "#ff5e8f" },
-  { key: "W", color: "#ff9f43" },
-  { key: "E", color: "#ffd54a" },
-  { key: "A", color: "#58e5a2" },
-  { key: "S", color: "#53c7ff" },
-  { key: "D", color: "#b88cff" }
+  { key: "W", color: "#ff8f66" },
+  { key: "A", color: "#ffd85e" },
+  { key: "S", color: "#55f0d5" },
+  { key: "D", color: "#71a8ff" }
 ];
 
-const HIT_LINE_RATIO = 0.82;
-const PERFECT_WINDOW = 28;
-const GREAT_WINDOW = 56;
-const GOOD_WINDOW = 96;
-const MISS_WINDOW = 130;
-const STARTING_LIVES = 8;
+const rhythmEls = {
+  score: document.getElementById("rhythmScore"),
+  combo: document.getElementById("rhythmComboCount"),
+  bestCombo: document.getElementById("rhythmBestCombo"),
+  keySet: document.getElementById("rhythmKeySet"),
+  speed: document.getElementById("rhythmSpeedDisplay"),
+  feedback: document.getElementById("rhythmFeedback"),
+  hint: document.getElementById("rhythmComboText"),
+  laneKeys: document.getElementById("laneKeys"),
+  lanes: document.getElementById("lanes"),
+  notes: document.getElementById("notes"),
+  game: document.getElementById("rhythmGame"),
+  overlay: document.getElementById("rhythmOverlay"),
+  overlayTitle: document.getElementById("rhythmOverlayTitle"),
+  overlayText: document.getElementById("rhythmOverlayText")
+};
 
-const scoreEl = document.getElementById("score");
-const comboCountEl = document.getElementById("comboCount");
-const bestComboEl = document.getElementById("bestCombo");
-const livesEl = document.getElementById("lives");
-const speedDisplayEl = document.getElementById("speedDisplay");
-const feedbackEl = document.getElementById("feedback");
-const comboTextEl = document.getElementById("comboText");
-const laneKeysEl = document.getElementById("laneKeys");
-const lanesEl = document.getElementById("lanes");
-const notesEl = document.getElementById("notes");
-const gameEl = document.getElementById("game");
+const RHYTHM_HIT_LINE_RATIO = 0.82;
+const RHYTHM_PERFECT_WINDOW = 44;
+const RHYTHM_GREAT_WINDOW = 84;
+const RHYTHM_MISS_WINDOW = 176;
 
-const laneEls = [];
-const laneKeyEls = [];
-const laneFlashTimers = [];
+const rhythmLaneEls = [];
+const rhythmLaneKeyEls = [];
+const rhythmLaneFlashTimers = [];
+let rhythmFeedbackTimer = null;
+let rhythmAudioContext = null;
 
-let overlayEl = null;
-let feedbackTimer = null;
-
-const state = {
+const rhythmState = {
   running: false,
   paused: false,
   score: 0,
   combo: 0,
   bestCombo: 0,
-  lives: STARTING_LIVES,
-  baseSpeed: 460,
-  currentSpeed: 460,
+  baseSpeed: 320,
+  currentSpeed: 320,
   spawnTimer: 0,
   elapsed: 0,
   lastFrameTime: 0,
@@ -49,102 +66,266 @@ const state = {
   notes: []
 };
 
-function buildBoard() {
+const typingEls = {
+  time: document.getElementById("typingTime"),
+  wpm: document.getElementById("typingWpm"),
+  accuracy: document.getElementById("typingAccuracy"),
+  progress: document.getElementById("typingProgress"),
+  errors: document.getElementById("typingErrors"),
+  feedback: document.getElementById("typingFeedback"),
+  hint: document.getElementById("typingHint"),
+  prompt: document.getElementById("typingPrompt"),
+  input: document.getElementById("typingInput"),
+  newText: document.getElementById("typingNewTextButton"),
+  reset: document.getElementById("typingResetButton")
+};
+
+const typingPassages = [
+  "Neon rain paints the sidewalk while arcade lights pulse against the night.",
+  "Fast fingers win the round when every word lands cleanly and without panic.",
+  "A tiny browser game can feel surprisingly alive when motion and feedback click together.",
+  "Push your rhythm, trust your timing, and let the scoreboard reward steady hands.",
+  "Typing quickly is less about rushing and more about staying smooth through every sentence."
+];
+
+const typingState = {
+  text: "",
+  active: false,
+  finished: false,
+  startTime: 0,
+  elapsedMs: 0,
+  frameId: null,
+  lastTextIndex: -1
+};
+
+function showView(viewName) {
+  activeView = viewName;
+
+  Object.entries(views).forEach(([name, element]) => {
+    element.classList.toggle("active", name === viewName);
+  });
+
+  viewLabelEl.textContent = viewTitles[viewName];
+  menuButtonEl.classList.toggle("hidden", viewName === "menu");
+
+  if (viewName !== "rhythm") {
+    resetRhythmMode();
+  }
+
+  if (viewName === "typing") {
+    setupTypingRound(true);
+  } else {
+    pauseTypingClock();
+    typingEls.input.blur();
+  }
+}
+
+function returnToMenu() {
+  showView("menu");
+}
+
+function buildRhythmBoard() {
+  rhythmEls.laneKeys.style.setProperty("--lane-count", laneConfig.length);
+  rhythmEls.lanes.style.setProperty("--lane-count", laneConfig.length);
+  rhythmEls.keySet.textContent = laneConfig.map((lane) => lane.key).join("");
+
   laneConfig.forEach((lane, laneIndex) => {
     const laneKeyEl = document.createElement("div");
     laneKeyEl.className = "lane-key";
     laneKeyEl.textContent = lane.key;
     laneKeyEl.style.setProperty("--lane-color", lane.color);
-    laneKeysEl.appendChild(laneKeyEl);
-    laneKeyEls.push(laneKeyEl);
+    rhythmEls.laneKeys.appendChild(laneKeyEl);
+    rhythmLaneKeyEls.push(laneKeyEl);
 
     const laneEl = document.createElement("div");
     laneEl.className = "lane";
     laneEl.style.setProperty("--lane-color", lane.color);
     laneEl.dataset.laneIndex = String(laneIndex);
-    lanesEl.appendChild(laneEl);
-    laneEls.push(laneEl);
+    rhythmEls.lanes.appendChild(laneEl);
+    rhythmLaneEls.push(laneEl);
   });
 }
 
-function getHitLineY() {
-  return gameEl.clientHeight * HIT_LINE_RATIO;
+function getRhythmHitLineY() {
+  return rhythmEls.game.clientHeight * RHYTHM_HIT_LINE_RATIO;
 }
 
-function updateHud() {
-  scoreEl.textContent = String(state.score);
-  comboCountEl.textContent = String(state.combo);
-  bestComboEl.textContent = String(state.bestCombo);
-  livesEl.textContent = String(state.lives);
-  speedDisplayEl.textContent = `${(state.currentSpeed / state.baseSpeed).toFixed(1)}x`;
+function updateRhythmHud() {
+  rhythmEls.score.textContent = String(rhythmState.score);
+  rhythmEls.combo.textContent = String(rhythmState.combo);
+  rhythmEls.bestCombo.textContent = String(rhythmState.bestCombo);
+  rhythmEls.speed.textContent = `${(rhythmState.currentSpeed / rhythmState.baseSpeed).toFixed(1)}x`;
 }
 
-function setStatus(title, detail, accent = "") {
-  feedbackEl.textContent = title;
-  feedbackEl.style.color = accent;
-  comboTextEl.textContent = detail;
+function setRhythmStatus(title, detail, accent = "") {
+  rhythmEls.feedback.textContent = title;
+  rhythmEls.feedback.style.color = accent;
+  rhythmEls.hint.textContent = detail;
 }
 
-function flashJudgement(title, detail, accent) {
-  if (feedbackTimer) {
-    clearTimeout(feedbackTimer);
+function flashRhythmJudgement(title, detail, accent) {
+  if (rhythmFeedbackTimer) {
+    clearTimeout(rhythmFeedbackTimer);
   }
 
-  setStatus(title, detail, accent);
-  feedbackTimer = setTimeout(() => {
-    feedbackEl.style.color = "";
+  setRhythmStatus(title, detail, accent);
+  rhythmFeedbackTimer = setTimeout(() => {
+    rhythmEls.feedback.style.color = "";
   }, 180);
 }
 
-function flashLane(laneIndex) {
-  const laneEl = laneEls[laneIndex];
-  const laneKeyEl = laneKeyEls[laneIndex];
+function flashRhythmLane(laneIndex) {
+  const laneEl = rhythmLaneEls[laneIndex];
+  const laneKeyEl = rhythmLaneKeyEls[laneIndex];
 
-  clearTimeout(laneFlashTimers[laneIndex]);
+  clearTimeout(rhythmLaneFlashTimers[laneIndex]);
   laneEl.classList.add("active");
   laneKeyEl.classList.add("active");
 
-  laneFlashTimers[laneIndex] = setTimeout(() => {
+  rhythmLaneFlashTimers[laneIndex] = setTimeout(() => {
     laneEl.classList.remove("active");
     laneKeyEl.classList.remove("active");
   }, 120);
 }
 
-function showOverlay(title, subtitle) {
-  hideOverlay();
+function pulseElement(element, className, duration = 260) {
+  if (!element) {
+    return;
+  }
 
-  overlayEl = document.createElement("div");
-  overlayEl.id = "gameOver";
-  overlayEl.innerHTML = `<div><h2>${title}</h2><p>${subtitle}</p></div>`;
-  document.body.appendChild(overlayEl);
+  element.classList.remove(className);
+  void element.offsetWidth;
+  element.classList.add(className);
+
+  setTimeout(() => {
+    element.classList.remove(className);
+  }, duration);
 }
 
-function hideOverlay() {
-  if (overlayEl) {
-    overlayEl.remove();
-    overlayEl = null;
+function getRhythmAudioContext() {
+  if (rhythmAudioContext) {
+    if (rhythmAudioContext.state === "suspended") {
+      rhythmAudioContext.resume();
+    }
+    return rhythmAudioContext;
+  }
+
+  const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+
+  if (!AudioContextCtor) {
+    return null;
+  }
+
+  rhythmAudioContext = new AudioContextCtor();
+
+  if (rhythmAudioContext.state === "suspended") {
+    rhythmAudioContext.resume();
+  }
+
+  return rhythmAudioContext;
+}
+
+function playRhythmTone(kind) {
+  const audioContext = getRhythmAudioContext();
+
+  if (!audioContext) {
+    return;
+  }
+
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  const now = audioContext.currentTime;
+
+  const toneMap = {
+    perfect: { frequency: 740, type: "triangle", gain: 0.085, decay: 0.22 },
+    great: { frequency: 620, type: "triangle", gain: 0.07, decay: 0.18 },
+    good: { frequency: 520, type: "sine", gain: 0.055, decay: 0.14 },
+    miss: { frequency: 210, type: "sawtooth", gain: 0.04, decay: 0.12 }
+  };
+
+  const config = toneMap[kind] || toneMap.good;
+
+  oscillator.type = config.type;
+  oscillator.frequency.setValueAtTime(config.frequency, now);
+  oscillator.frequency.exponentialRampToValueAtTime(
+    Math.max(90, config.frequency * (kind === "miss" ? 0.72 : 1.24)),
+    now + config.decay
+  );
+
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(config.gain, now + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + config.decay);
+
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+
+  oscillator.start(now);
+  oscillator.stop(now + config.decay + 0.03);
+}
+
+function spawnRhythmBurst(laneIndex, kind) {
+  const lane = laneConfig[laneIndex];
+
+  if (!lane) {
+    return;
+  }
+
+  const burst = document.createElement("div");
+  burst.className = `hit-burst hit-burst-${kind}`;
+  burst.style.setProperty("--burst-color", lane.color);
+  burst.style.setProperty("--x", `${((laneIndex + 0.5) * 100) / laneConfig.length}%`);
+  burst.style.setProperty("--y", `${getRhythmHitLineY()}px`);
+  rhythmEls.game.appendChild(burst);
+
+  burst.addEventListener("animationend", () => {
+    burst.remove();
+  });
+}
+
+function triggerRhythmImpact(kind, laneIndex) {
+  const boardImpactClass = `impact-${kind}`;
+  pulseElement(rhythmEls.game, boardImpactClass, 320);
+  pulseElement(rhythmEls.feedback, "impact-text", 260);
+  pulseElement(rhythmEls.score.closest(".stat-card"), "impact-card", 280);
+  pulseElement(rhythmLaneEls[laneIndex], "impact", 240);
+  pulseElement(rhythmLaneKeyEls[laneIndex], "impact", 240);
+  spawnRhythmBurst(laneIndex, kind);
+  playRhythmTone(kind);
+
+  if (navigator.vibrate) {
+    navigator.vibrate(kind === "perfect" ? 14 : kind === "miss" ? 18 : 10);
   }
 }
 
-function stopLoop() {
-  if (state.animationFrameId !== null) {
-    cancelAnimationFrame(state.animationFrameId);
-    state.animationFrameId = null;
+function showRhythmOverlay(title, text) {
+  rhythmEls.overlay.classList.remove("hidden");
+  rhythmEls.overlayTitle.textContent = title;
+  rhythmEls.overlayText.textContent = text;
+}
+
+function hideRhythmOverlay() {
+  rhythmEls.overlay.classList.add("hidden");
+}
+
+function stopRhythmLoop() {
+  if (rhythmState.animationFrameId !== null) {
+    cancelAnimationFrame(rhythmState.animationFrameId);
+    rhythmState.animationFrameId = null;
   }
 }
 
-function clearNotes() {
-  state.notes.forEach((note) => {
+function clearRhythmNotes() {
+  rhythmState.notes.forEach((note) => {
     note.element.remove();
   });
-  state.notes = [];
+  rhythmState.notes = [];
 }
 
-function positionNote(note) {
+function positionRhythmNote(note) {
   note.element.style.transform = `translate3d(-50%, ${note.y}px, 0)`;
 }
 
-function spawnNote() {
+function spawnRhythmNote() {
   const laneIndex = Math.floor(Math.random() * laneConfig.length);
   const lane = laneConfig[laneIndex];
   const noteEl = document.createElement("div");
@@ -153,7 +334,7 @@ function spawnNote() {
   noteEl.textContent = lane.key;
   noteEl.style.setProperty("--lane-color", lane.color);
   noteEl.style.setProperty("--x", `${((laneIndex + 0.5) * 100) / laneConfig.length}%`);
-  notesEl.appendChild(noteEl);
+  rhythmEls.notes.appendChild(noteEl);
 
   const note = {
     laneIndex,
@@ -162,12 +343,12 @@ function spawnNote() {
     element: noteEl
   };
 
-  positionNote(note);
-  state.notes.push(note);
+  positionRhythmNote(note);
+  rhythmState.notes.push(note);
 }
 
-function removeNoteAt(noteIndex) {
-  const [note] = state.notes.splice(noteIndex, 1);
+function removeRhythmNoteAt(noteIndex) {
+  const [note] = rhythmState.notes.splice(noteIndex, 1);
 
   if (note) {
     note.element.remove();
@@ -176,222 +357,411 @@ function removeNoteAt(noteIndex) {
   return note;
 }
 
-function registerMiss(noteKey) {
-  state.combo = 0;
-  state.lives -= 1;
-  updateHud();
-
-  if (state.lives <= 0) {
-    endGame();
-    return;
-  }
-
-  flashJudgement("MISS", `${noteKey} slipped by. ${state.lives} lives left.`, "#ff7f9c");
+function registerRhythmMiss(note) {
+  rhythmState.combo = 0;
+  updateRhythmHud();
+  flashRhythmJudgement("MISS", `${note.key} slipped by. No lives to lose, just catch the next beat.`, "#ff9cc0");
+  triggerRhythmImpact("miss", note.laneIndex);
 }
 
-function handleNoteMiss(noteIndex) {
-  const note = removeNoteAt(noteIndex);
+function handleRhythmMiss(noteIndex) {
+  const note = removeRhythmNoteAt(noteIndex);
 
   if (note) {
-    registerMiss(note.key);
+    registerRhythmMiss(note);
   }
 }
 
-function scoreHit(noteIndex, distance) {
-  const note = removeNoteAt(noteIndex);
+function scoreRhythmHit(noteIndex, distance) {
+  const note = removeRhythmNoteAt(noteIndex);
 
   if (!note) {
     return;
   }
 
-  let points = 0;
+  let points = 1;
   let title = "GOOD";
   let accent = "#fff6b4";
+  let impactKind = "good";
 
-  if (distance <= PERFECT_WINDOW) {
+  if (distance <= RHYTHM_PERFECT_WINDOW) {
     points = 5;
     title = "PERFECT";
     accent = "#7ef9ff";
-  } else if (distance <= GREAT_WINDOW) {
+    impactKind = "perfect";
+  } else if (distance <= RHYTHM_GREAT_WINDOW) {
     points = 3;
     title = "GREAT";
     accent = "#9be38e";
-  } else {
-    points = 1;
+    impactKind = "great";
   }
 
-  state.score += points + Math.floor(state.combo / 6);
-  state.combo += 1;
-  state.bestCombo = Math.max(state.bestCombo, state.combo);
-  updateHud();
+  rhythmState.score += points + Math.floor(rhythmState.combo / 6);
+  rhythmState.combo += 1;
+  rhythmState.bestCombo = Math.max(rhythmState.bestCombo, rhythmState.combo);
+  updateRhythmHud();
 
-  flashJudgement(title, `${state.combo} combo alive in the ${note.key} lane.`, accent);
+  flashRhythmJudgement(title, `${rhythmState.combo} combo alive in the ${note.key} lane.`, accent);
+  triggerRhythmImpact(impactKind, note.laneIndex);
 }
 
-function findClosestNoteInLane(laneIndex) {
+function findClosestRhythmNote(laneIndex) {
   let result = null;
 
-  for (let noteIndex = 0; noteIndex < state.notes.length; noteIndex += 1) {
-    const note = state.notes[noteIndex];
+  for (let noteIndex = 0; noteIndex < rhythmState.notes.length; noteIndex += 1) {
+    const note = rhythmState.notes[noteIndex];
 
     if (note.laneIndex !== laneIndex) {
       continue;
     }
 
-    const distance = Math.abs(note.y - getHitLineY());
+    const distance = Math.abs(note.y - getRhythmHitLineY());
 
     if (!result || distance < result.distance) {
-      result = { noteIndex, note, distance };
+      result = { noteIndex, distance };
     }
   }
 
   return result;
 }
 
-function startGame() {
-  hideOverlay();
-  stopLoop();
-  clearNotes();
+function startRhythmGame() {
+  hideRhythmOverlay();
+  stopRhythmLoop();
+  clearRhythmNotes();
 
-  state.running = true;
-  state.paused = false;
-  state.score = 0;
-  state.combo = 0;
-  state.bestCombo = 0;
-  state.lives = STARTING_LIVES;
-  state.currentSpeed = state.baseSpeed;
-  state.spawnTimer = 0;
-  state.elapsed = 0;
-  state.lastFrameTime = 0;
+  rhythmState.running = true;
+  rhythmState.paused = false;
+  rhythmState.score = 0;
+  rhythmState.combo = 0;
+  rhythmState.bestCombo = 0;
+  rhythmState.currentSpeed = rhythmState.baseSpeed;
+  rhythmState.spawnTimer = 0;
+  rhythmState.elapsed = 0;
+  rhythmState.lastFrameTime = 0;
 
-  updateHud();
-  setStatus("GO", "Lock into the beat and keep the combo climbing.", "#7ef9ff");
-
-  spawnNote();
-  state.animationFrameId = requestAnimationFrame(gameLoop);
+  updateRhythmHud();
+  setRhythmStatus("GO", "Easy mode is live. Float through the neon lanes and keep the combo climbing.", "#7ef9ff");
+  spawnRhythmNote();
+  rhythmState.animationFrameId = requestAnimationFrame(runRhythmLoop);
 }
 
-function endGame() {
-  state.running = false;
-  state.paused = false;
-  stopLoop();
-  clearNotes();
-  updateHud();
-  setStatus("ROUND OVER", `Final score ${state.score}. Best combo ${state.bestCombo}.`, "#ff90ae");
-  showOverlay("Game Over", "Press SPACE to launch another run.");
-}
-
-function togglePause() {
-  if (!state.running) {
+function toggleRhythmPause() {
+  if (!rhythmState.running) {
     return;
   }
 
-  state.paused = !state.paused;
+  rhythmState.paused = !rhythmState.paused;
 
-  if (state.paused) {
-    stopLoop();
-    setStatus("PAUSED", "Press P to jump back in.", "#ffd36b");
+  if (rhythmState.paused) {
+    stopRhythmLoop();
+    setRhythmStatus("PAUSED", "Press P to jump back in.", "#ffd36b");
+    showRhythmOverlay("Paused", "Press P to continue or Back to Menu to switch games.");
     return;
   }
 
-  state.lastFrameTime = 0;
-  setStatus("GO", "Back in motion. Keep the streak alive.", "#7ef9ff");
-  state.animationFrameId = requestAnimationFrame(gameLoop);
+  hideRhythmOverlay();
+  rhythmState.lastFrameTime = 0;
+  setRhythmStatus("GO", "Back in motion. Keep the streak alive.", "#7ef9ff");
+  rhythmState.animationFrameId = requestAnimationFrame(runRhythmLoop);
 }
 
-function gameLoop(timestamp) {
-  if (!state.running || state.paused) {
-    state.animationFrameId = null;
+function resetRhythmMode() {
+  rhythmState.running = false;
+  rhythmState.paused = false;
+  stopRhythmLoop();
+  clearRhythmNotes();
+  rhythmState.score = 0;
+  rhythmState.combo = 0;
+  rhythmState.bestCombo = 0;
+  rhythmState.currentSpeed = rhythmState.baseSpeed;
+  rhythmState.spawnTimer = 0;
+  rhythmState.elapsed = 0;
+  rhythmState.lastFrameTime = 0;
+  updateRhythmHud();
+  setRhythmStatus("Ready", "W, A, S, and D only. No lives, no pressure, just flow.", "");
+  showRhythmOverlay("Pulse Grid", "Press SPACE to launch an endless easy run.");
+}
+
+function runRhythmLoop(timestamp) {
+  if (!rhythmState.running || rhythmState.paused || activeView !== "rhythm") {
+    rhythmState.animationFrameId = null;
     return;
   }
 
-  if (!state.lastFrameTime) {
-    state.lastFrameTime = timestamp;
+  if (!rhythmState.lastFrameTime) {
+    rhythmState.lastFrameTime = timestamp;
   }
 
-  const deltaTime = Math.min(0.05, (timestamp - state.lastFrameTime) / 1000);
-  state.lastFrameTime = timestamp;
-  state.elapsed += deltaTime;
-  state.spawnTimer += deltaTime * 1000;
-  state.currentSpeed = state.baseSpeed + state.elapsed * 48;
+  const deltaTime = Math.min(0.05, (timestamp - rhythmState.lastFrameTime) / 1000);
+  rhythmState.lastFrameTime = timestamp;
+  rhythmState.elapsed += deltaTime;
+  rhythmState.spawnTimer += deltaTime * 1000;
+  rhythmState.currentSpeed = rhythmState.baseSpeed + rhythmState.elapsed * 18;
 
-  const spawnInterval = Math.max(240, 760 - state.elapsed * 26);
+  const spawnInterval = Math.max(540, 980 - rhythmState.elapsed * 18);
 
-  while (state.spawnTimer >= spawnInterval) {
-    spawnNote();
-    state.spawnTimer -= spawnInterval;
+  while (rhythmState.spawnTimer >= spawnInterval) {
+    spawnRhythmNote();
+    rhythmState.spawnTimer -= spawnInterval;
   }
 
-  for (let noteIndex = state.notes.length - 1; noteIndex >= 0; noteIndex -= 1) {
-    const note = state.notes[noteIndex];
-    note.y += state.currentSpeed * deltaTime;
-    positionNote(note);
+  for (let noteIndex = rhythmState.notes.length - 1; noteIndex >= 0; noteIndex -= 1) {
+    const note = rhythmState.notes[noteIndex];
+    note.y += rhythmState.currentSpeed * deltaTime;
+    positionRhythmNote(note);
 
-    if (note.y > getHitLineY() + MISS_WINDOW) {
-      handleNoteMiss(noteIndex);
-
-      if (!state.running) {
-        break;
-      }
+    if (note.y > getRhythmHitLineY() + RHYTHM_MISS_WINDOW) {
+      handleRhythmMiss(noteIndex);
     }
   }
 
-  updateHud();
+  updateRhythmHud();
 
-  if (state.running && !state.paused) {
-    state.animationFrameId = requestAnimationFrame(gameLoop);
+  if (rhythmState.running && !rhythmState.paused) {
+    rhythmState.animationFrameId = requestAnimationFrame(runRhythmLoop);
   } else {
-    state.animationFrameId = null;
+    rhythmState.animationFrameId = null;
+  }
+}
+
+function updateTypingStats(correctChars = 0, typedLength = 0) {
+  const minutes = typingState.elapsedMs / 60000;
+  const wpm = minutes > 0 ? Math.round(correctChars / 5 / minutes) : 0;
+  const accuracy = typedLength > 0 ? Math.round((correctChars / typedLength) * 100) : 100;
+  const progress = typingState.text ? Math.round((typedLength / typingState.text.length) * 100) : 0;
+
+  typingEls.time.textContent = `${(typingState.elapsedMs / 1000).toFixed(1)}s`;
+  typingEls.wpm.textContent = String(wpm);
+  typingEls.accuracy.textContent = `${accuracy}%`;
+  typingEls.progress.textContent = `${Math.min(progress, 100)}%`;
+  typingEls.errors.textContent = String(Math.max(typedLength - correctChars, 0));
+}
+
+function setTypingStatus(title, detail, accent = "") {
+  typingEls.feedback.textContent = title;
+  typingEls.feedback.style.color = accent;
+  typingEls.hint.textContent = detail;
+}
+
+function renderTypingPrompt(typedValue) {
+  let correctChars = 0;
+
+  [...typingEls.prompt.children].forEach((charEl, index) => {
+    const expectedChar = typingState.text[index];
+    const typedChar = typedValue[index];
+
+    charEl.className = "char";
+
+    if (typedChar == null) {
+      if (index === typedValue.length) {
+        charEl.classList.add("current");
+      }
+      return;
+    }
+
+    if (typedChar === expectedChar) {
+      charEl.classList.add("correct");
+      correctChars += 1;
+    } else {
+      charEl.classList.add("incorrect");
+    }
+
+    if (index === typedValue.length) {
+      charEl.classList.add("current");
+    }
+  });
+
+  updateTypingStats(correctChars, typedValue.length);
+  return correctChars;
+}
+
+function chooseTypingPassage() {
+  let nextIndex = Math.floor(Math.random() * typingPassages.length);
+
+  if (typingPassages.length > 1) {
+    while (nextIndex === typingState.lastTextIndex) {
+      nextIndex = Math.floor(Math.random() * typingPassages.length);
+    }
+  }
+
+  typingState.lastTextIndex = nextIndex;
+  return typingPassages[nextIndex];
+}
+
+function renderTypingText() {
+  typingEls.prompt.innerHTML = "";
+
+  [...typingState.text].forEach((character) => {
+    const span = document.createElement("span");
+    span.className = "char";
+    span.textContent = character;
+    typingEls.prompt.appendChild(span);
+  });
+}
+
+function pauseTypingClock() {
+  if (typingState.frameId !== null) {
+    cancelAnimationFrame(typingState.frameId);
+    typingState.frameId = null;
+  }
+}
+
+function runTypingClock(now) {
+  if (!typingState.active) {
+    typingState.frameId = null;
+    return;
+  }
+
+  typingState.elapsedMs = now - typingState.startTime;
+  const typedValue = typingEls.input.value;
+  const correctChars = renderTypingPrompt(typedValue);
+  updateTypingStats(correctChars, typedValue.length);
+  typingState.frameId = requestAnimationFrame(runTypingClock);
+}
+
+function setupTypingRound(selectNewText) {
+  pauseTypingClock();
+
+  if (selectNewText || !typingState.text) {
+    typingState.text = chooseTypingPassage();
+  }
+
+  typingState.active = false;
+  typingState.finished = false;
+  typingState.startTime = 0;
+  typingState.elapsedMs = 0;
+
+  typingEls.input.value = "";
+  typingEls.input.maxLength = typingState.text.length;
+  typingEls.input.readOnly = false;
+  renderTypingText();
+  renderTypingPrompt("");
+  setTypingStatus("Ready", "Start typing and the timer will begin on your first key.", "");
+
+  if (activeView === "typing") {
+    setTimeout(() => {
+      typingEls.input.focus();
+    }, 0);
+  }
+}
+
+function startTypingClock() {
+  if (typingState.active || typingState.finished) {
+    return;
+  }
+
+  typingState.active = true;
+  typingState.startTime = performance.now() - typingState.elapsedMs;
+  setTypingStatus("GO", "Stay smooth. Speed matters, but clean typing wins.", "#ffcf7f");
+  typingState.frameId = requestAnimationFrame(runTypingClock);
+}
+
+function finishTypingRound() {
+  typingState.active = false;
+  typingState.finished = true;
+  pauseTypingClock();
+
+  const typedValue = typingEls.input.value;
+  const correctChars = renderTypingPrompt(typedValue);
+  updateTypingStats(correctChars, typedValue.length);
+
+  const minutes = typingState.elapsedMs / 60000;
+  const wpm = minutes > 0 ? Math.round(correctChars / 5 / minutes) : 0;
+  const accuracy = typedValue.length > 0 ? Math.round((correctChars / typedValue.length) * 100) : 100;
+
+  typingEls.input.readOnly = true;
+  setTypingStatus("Finished", `You cleared the text in ${(typingState.elapsedMs / 1000).toFixed(1)}s at ${wpm} WPM with ${accuracy}% accuracy.`, "#7ef9ff");
+}
+
+function handleTypingInput() {
+  let typedValue = typingEls.input.value.replace(/\n/g, " ");
+
+  if (typedValue !== typingEls.input.value) {
+    typingEls.input.value = typedValue;
+  }
+
+  if (!typingState.text) {
+    setupTypingRound(true);
+  }
+
+  if (!typingState.active && typedValue.length > 0 && !typingState.finished) {
+    startTypingClock();
+  }
+
+  renderTypingPrompt(typedValue);
+
+  if (typedValue === typingState.text && !typingState.finished) {
+    finishTypingRound();
   }
 }
 
 document.addEventListener("keydown", (event) => {
-  if (event.code === "Space") {
-    event.preventDefault();
+  if (activeView === "rhythm") {
+    if (event.code === "Space") {
+      event.preventDefault();
 
-    if (!state.running) {
-      startGame();
+      if (!rhythmState.running) {
+        startRhythmGame();
+      }
+      return;
     }
-    return;
+
+    if (event.code === "KeyP") {
+      toggleRhythmPause();
+      return;
+    }
+
+    const key = event.key.toUpperCase();
+    const laneIndex = laneConfig.findIndex((lane) => lane.key === key);
+
+    if (laneIndex === -1) {
+      return;
+    }
+
+    flashRhythmLane(laneIndex);
+
+    if (!rhythmState.running || rhythmState.paused) {
+      return;
+    }
+
+    const target = findClosestRhythmNote(laneIndex);
+
+    if (!target) {
+      rhythmState.combo = 0;
+      updateRhythmHud();
+      flashRhythmJudgement("EMPTY", `${key} lane is clear. Wait for the note.`, "#f7b0ff");
+      return;
+    }
+
+    if (target.distance > RHYTHM_MISS_WINDOW) {
+      rhythmState.combo = 0;
+      updateRhythmHud();
+      flashRhythmJudgement("TOO SOON", `${key} was not close enough to the line.`, "#ffb347");
+      return;
+    }
+
+    scoreRhythmHit(target.noteIndex, target.distance);
   }
-
-  if (event.code === "KeyP") {
-    togglePause();
-    return;
-  }
-
-  const key = event.key.toUpperCase();
-  const laneIndex = laneConfig.findIndex((lane) => lane.key === key);
-
-  if (laneIndex === -1) {
-    return;
-  }
-
-  flashLane(laneIndex);
-
-  if (!state.running || state.paused) {
-    return;
-  }
-
-  const target = findClosestNoteInLane(laneIndex);
-
-  if (!target) {
-    state.combo = 0;
-    updateHud();
-    flashJudgement("EMPTY", `${key} lane is clear. Wait for the note.`, "#f7b0ff");
-    return;
-  }
-
-  if (target.distance > MISS_WINDOW) {
-    state.combo = 0;
-    updateHud();
-    flashJudgement("TOO SOON", `${key} was not close enough to the line.`, "#ffb347");
-    return;
-  }
-
-  scoreHit(target.noteIndex, target.distance);
 });
 
-buildBoard();
-updateHud();
-showOverlay("Press Space", "Use Q, W, E, A, S, and D. Press P any time to pause.");
+modeButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const viewName = button.dataset.view;
+    showView(viewName);
+  });
+});
+
+menuButtonEl.addEventListener("click", returnToMenu);
+typingEls.input.addEventListener("input", handleTypingInput);
+typingEls.input.addEventListener("paste", (event) => {
+  event.preventDefault();
+  setTypingStatus("No Paste", "This mode tracks real typing speed, so pasting is disabled.", "#ffb347");
+});
+typingEls.newText.addEventListener("click", () => setupTypingRound(true));
+typingEls.reset.addEventListener("click", () => setupTypingRound(false));
+
+buildRhythmBoard();
+resetRhythmMode();
+setupTypingRound(true);
+showView("menu");

@@ -3,54 +3,168 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse Grid</title>
+  <title>Neon Sprint Arcade</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="backdrop backdrop-left"></div>
   <div class="backdrop backdrop-right"></div>
 
-  <main class="app-shell">
-    <section class="hero-panel">
-      <p class="eyebrow">JavaScript Rhythm Game</p>
-      <h1>Pulse Grid</h1>
-      <p id="info" class="headline">Press SPACE to start. Press P to pause. Hit the matching lane key on the line.</p>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Browser Arcade</p>
+      <h1 class="brand-title">Neon Sprint</h1>
+    </div>
 
-      <div class="stats-grid">
-        <article class="stat-card">
-          <span class="stat-label">Score</span>
-          <strong id="score">0</strong>
-        </article>
-        <article class="stat-card">
-          <span class="stat-label">Combo</span>
-          <strong id="comboCount">0</strong>
-        </article>
-        <article class="stat-card">
-          <span class="stat-label">Best</span>
-          <strong id="bestCombo">0</strong>
-        </article>
-        <article class="stat-card">
-          <span class="stat-label">Lives</span>
-          <strong id="lives">8</strong>
-        </article>
-        <article class="stat-card">
-          <span class="stat-label">Speed</span>
-          <strong id="speedDisplay">1.0x</strong>
-        </article>
-      </div>
+    <div class="topbar-actions">
+      <span id="viewLabel" class="view-label">Choose a mode</span>
+      <button id="menuButton" class="ghost-button hidden" type="button">Back to Menu</button>
+    </div>
+  </header>
 
-      <div class="status-strip">
-        <div id="feedback" class="feedback-text">Ready</div>
-        <div id="comboText" class="combo-text">Learn the lanes and build a streak.</div>
+  <main class="view-stack">
+    <section id="menuView" class="view active">
+      <div class="menu-shell">
+        <section class="menu-hero hero-panel">
+          <p class="eyebrow">Pick Your Challenge</p>
+          <h2 class="section-title">Two games, one neon dashboard.</h2>
+          <p class="headline">
+            Jump into an easier four-key rhythm flow or race through a typing sprint.
+            Both modes live in the same arcade, so you can swap between them from the menu any time.
+          </p>
+        </section>
+
+        <section class="mode-grid">
+          <article class="mode-card mode-card-rhythm">
+            <p class="card-tag">Rhythm</p>
+            <h3>Pulse Grid</h3>
+            <p>Ride glowing notes across a chill four-key lane set with no lives and a smoother tempo ramp.</p>
+            <button class="primary-button" type="button" data-view="rhythm">Play Pulse Grid</button>
+          </article>
+
+          <article class="mode-card mode-card-typing">
+            <p class="card-tag">Typing</p>
+            <h3>Word Rush</h3>
+            <p>Get a fresh text prompt and type it as fast and as accurately as you can.</p>
+            <button class="primary-button" type="button" data-view="typing">Play Word Rush</button>
+          </article>
+        </section>
       </div>
     </section>
 
-    <section class="board-shell">
-      <div id="laneKeys" class="lane-keys" aria-hidden="true"></div>
-      <div id="game" class="game-board" aria-label="Rhythm lanes">
-        <div id="lanes" class="lanes"></div>
-        <div id="notes" class="notes-layer"></div>
-        <div id="hitLine"></div>
+    <section id="rhythmView" class="view">
+      <div class="view-shell">
+        <section class="hero-panel rhythm-panel">
+          <p class="eyebrow">Rhythm Mode</p>
+          <h2 class="section-title">Pulse Grid</h2>
+          <p id="rhythmInfo" class="headline">Press SPACE to start. Press P to pause. Use W, A, S, and D to catch the notes on the line.</p>
+
+          <div class="stats-grid">
+            <article class="stat-card">
+              <span class="stat-label">Score</span>
+              <strong id="rhythmScore">0</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Combo</span>
+              <strong id="rhythmComboCount">0</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Best</span>
+              <strong id="rhythmBestCombo">0</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Keys</span>
+              <strong id="rhythmKeySet">WASD</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Speed</span>
+              <strong id="rhythmSpeedDisplay">1.0x</strong>
+            </article>
+          </div>
+
+          <div class="status-strip">
+            <div id="rhythmFeedback" class="feedback-text">Ready</div>
+            <div id="rhythmComboText" class="combo-text">Learn the lanes and build a streak.</div>
+          </div>
+        </section>
+
+        <section class="board-shell">
+          <div id="laneKeys" class="lane-keys" aria-hidden="true"></div>
+          <div id="rhythmGame" class="game-board" aria-label="Rhythm lanes">
+            <div id="lanes" class="lanes"></div>
+            <div id="notes" class="notes-layer"></div>
+            <div id="hitLine"></div>
+            <div id="rhythmOverlay" class="board-overlay">
+              <div>
+                <h3 id="rhythmOverlayTitle">Pulse Grid</h3>
+                <p id="rhythmOverlayText">Press SPACE to launch an endless run with W, A, S, and D.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="typingView" class="view">
+      <div class="view-shell">
+        <section class="hero-panel">
+          <p class="eyebrow">Typing Mode</p>
+          <h2 class="section-title">Word Rush</h2>
+          <p id="typingInfo" class="headline">A new prompt appears each round. Start typing and the timer begins on your first keystroke.</p>
+
+          <div class="stats-grid">
+            <article class="stat-card">
+              <span class="stat-label">Time</span>
+              <strong id="typingTime">0.0s</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">WPM</span>
+              <strong id="typingWpm">0</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Accuracy</span>
+              <strong id="typingAccuracy">100%</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Progress</span>
+              <strong id="typingProgress">0%</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Errors</span>
+              <strong id="typingErrors">0</strong>
+            </article>
+          </div>
+
+          <div class="status-strip">
+            <div id="typingFeedback" class="feedback-text">Ready</div>
+            <div id="typingHint" class="combo-text">Pick a prompt and write it without losing your pace.</div>
+          </div>
+
+          <div class="typing-actions">
+            <button id="typingNewTextButton" class="primary-button" type="button">New Text</button>
+            <button id="typingResetButton" class="ghost-button" type="button">Reset Run</button>
+          </div>
+        </section>
+
+        <section class="board-shell typing-shell">
+          <div class="typing-card">
+            <p class="typing-label">Target Text</p>
+            <div id="typingPrompt" class="typing-prompt" aria-live="polite"></div>
+          </div>
+
+          <div class="typing-card">
+            <label class="typing-label" for="typingInput">Type Here</label>
+            <textarea
+              id="typingInput"
+              class="typing-input"
+              spellcheck="false"
+              autocomplete="off"
+              autocapitalize="none"
+              autocorrect="off"
+              placeholder="Start typing the passage here..."
+            ></textarea>
+          </div>
+        </section>
       </div>
     </section>
   </main>
