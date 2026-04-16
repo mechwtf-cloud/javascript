@@ -1,4 +1,4 @@
-const keys = ["W", "A", "S", "D", "Q", "E"];
+const keys = ["W", "A", "S", "D"];
 let combo = [];
 let index = 0;
 let score = 0;
