@@ -85,7 +85,7 @@ document.addEventListener("keydown", (e) => {
   const key = e.key.toUpperCase();
 
   if (key === currentNote.key) {
-    let distance = Math.abs(currentNote.y - 320);
+    let distance = Math.abs(currentNote.y - 530);
 
     if (distance < 10) {
       feedback.textContent = "PERFECT!";
