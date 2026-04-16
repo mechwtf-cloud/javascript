@@ -1,27 +1,83 @@
 body {
-  background: #111;
+  margin: 0;
+  font-family: Arial, sans-serif;
   color: white;
-  font-family: Arial;
-  text-align: center;
+  overflow: hidden;
+
+  /* 🌈 animated background */
+  background: linear-gradient(-45deg, #ff00cc, #3333ff, #00ffcc, #ffcc00);
+  background-size: 400% 400%;
+  animation: bgMove 10s infinite linear;
 }
 
+@keyframes bgMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* 🎮 game container */
 #game {
   position: relative;
-  height: 400px;
-  width: 200px;
-  margin: auto;
-  border: 2px solid white;
+  height: 650px;
+  width: 320px;
+  margin: 40px auto;
+
+  border-radius: 20px;
+
+  /* glass / 3D panel look */
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(10px);
+
+  box-shadow:
+    0 0 20px rgba(0,0,0,0.5),
+    inset 0 0 20px rgba(255,255,255,0.1);
+
   overflow: hidden;
+  perspective: 800px;
 }
 
+/* 🎯 HIT LINE (IMPORTANT) */
+#game::after {
+  content: "";
+  position: absolute;
+  bottom: 120px;
+  left: 0;
+  width: 100%;
+  height: 4px;
+
+  background: white;
+  box-shadow: 0 0 15px white;
+}
+
+/* 🎵 notes */
 .note {
   position: absolute;
   top: 0;
   left: 50%;
-  transform: translateX(-50%);
-  font-size: 24px;
+  transform: translateX(-50%) rotateX(25deg);
+
+  font-size: 28px;
   font-weight: bold;
-  padding: 5px;
+
+  padding: 10px 14px;
+  border-radius: 12px;
+
   border: 2px solid white;
-  border-radius: 8px;
+
+  /* glowing + 3D feel */
+  box-shadow: 0 0 20px rgba(255,255,255,0.4);
+
+  animation: floatNote 0.2s ease-out;
+}
+
+@keyframes floatNote {
+  from {
+    transform: translateX(-50%) translateZ(-100px) scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateZ(0px) scale(1);
+    opacity: 1;
+  }
 }
