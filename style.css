@@ -40,13 +40,13 @@ body {
 /* HIT LINE */
 #hitLine {
   position: absolute;
-  bottom: 20%;
+  left: 0;
   width: 100%;
   height: 4px;
-  background: linear-gradient(90deg, #00ffff, #ffffff, #ff00ff);
-  box-shadow: 0 0 15px white;
+  background: cyan;
+  bottom: 20%;
+  box-shadow: 0 0 15px cyan;
 }
-
 /* NOTES */
 .note {
   position: absolute;
