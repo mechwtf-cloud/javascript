@@ -11,6 +11,8 @@ const feedback = document.getElementById("feedback");
 const scoreEl = document.getElementById("score");
 const gameHeight = game.clientHeight;
 const HIT_LINE = gameHeight * 0.8;
+const HIT_LINE_RATIO = 0.8;
+const hitLineY = game.clientHeight * HIT_LINE_RATIO;
 
 function randomColor() {
   return `hsl(${Math.random() * 360}, 100%, 60%)`;
@@ -100,19 +102,29 @@ document.addEventListener("keydown", (e) => {
 
   const key = e.key.toUpperCase();
 
-  if (key === currentNote.key) {
-    let distance = Math.abs(currentNote.y - HIT_LINE);
+ if (key === currentNote.key) {
+  let distance = Math.abs(currentNote.y - HIT_LINE);
 
-    if (distance < 20) {
-      feedback.textContent = "PERFECT!";
-      score += 3;
-    } else if (distance < 50) {
-      feedback.textContent = "GOOD!";
-      score += 1;
-    } else {
-      feedback.textContent = "EARLY!";
-    }
+  if (distance < 20) {
+    feedback.textContent = "PERFECT!";
+    feedback.style.color = "cyan";
+    score += 3;
+  } else if (distance < 50) {
+    feedback.textContent = "GOOD!";
+    feedback.style.color = "white";
+    score += 1;
+  } else {
+    feedback.textContent = "EARLY!";
+    feedback.style.color = "orange";
+  }
 
+  setTimeout(() => feedback.style.color = "white", 100);
+
+  scoreEl.textContent = score;
+
+  currentNote.element.remove();
+  spawnNote();
+}
     scoreEl.textContent = score;
 
     currentNote.element.remove();
