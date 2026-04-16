@@ -75,8 +75,8 @@ function gameLoop() {
 }
 
 document.addEventListener("keydown", (e) => {
-  document.addEventListener("keydown", (e) => {
-    console.log(e.code);
+  console.log(e.code);
+
   /* ▶ START GAME */
   if (!gameRunning && e.code === "Space") {
     gameRunning = true;
@@ -90,6 +90,43 @@ document.addEventListener("keydown", (e) => {
     gameLoop();
     return;
   }
+
+  /* ⏸ PAUSE */
+  if (e.code === "KeyP") {
+    paused = !paused;
+    feedback.textContent = paused ? "PAUSED" : "GO!";
+    if (!paused) gameLoop();
+    return;
+  }
+
+  if (!gameRunning || !currentNote || paused) return;
+
+  const key = e.key.toUpperCase();
+
+  if (key === currentNote.key) {
+    let distance = Math.abs(currentNote.y - HIT_LINE);
+
+    if (distance < 20) {
+      feedback.textContent = "PERFECT!";
+      feedback.style.color = "cyan";
+      score += 3;
+    } else if (distance < 50) {
+      feedback.textContent = "GOOD!";
+      feedback.style.color = "white";
+      score += 1;
+    } else {
+      feedback.textContent = "EARLY!";
+      feedback.style.color = "orange";
+    }
+
+    setTimeout(() => feedback.style.color = "white", 100);
+
+    scoreEl.textContent = score;
+
+    currentNote.element.remove();
+    spawnNote();
+  }
+});
 
   /* ⏸ PAUSE */
   if (e.code === "KeyP") {
