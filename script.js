@@ -1,54 +1,85 @@
-const keys = ["W", "A", "S", "D"];
-let combo = [];
-let index = 0;
+const keys = ["W","A","S","D","Q","E","R","F"];
+let currentNote = null;
+let noteY = 0;
+let speed = 2;
+let gameRunning = false;
 let score = 0;
-let started = false;
 
-const comboEl = document.getElementById("combo");
-const infoEl = document.getElementById("info");
+const game = document.getElementById("game");
+const feedback = document.getElementById("feedback");
 const scoreEl = document.getElementById("score");
 
-function newCombo() {
-  combo = [];
-  for (let i = 0; i < 3; i++) {
-    combo.push(keys[Math.floor(Math.random() * keys.length)]);
+function spawnNote() {
+  const key = keys[Math.floor(Math.random() * keys.length)];
+
+  const note = document.createElement("div");
+  note.classList.add("note");
+  note.textContent = key;
+
+  game.appendChild(note);
+
+  currentNote = {
+    element: note,
+    key: key,
+    y: 0
+  };
+}
+
+function gameLoop() {
+  if (!gameRunning) return;
+
+  if (currentNote) {
+    currentNote.y += speed;
+    currentNote.element.style.top = currentNote.y + "px";
+
+    // too late = lose
+    if (currentNote.y > 350) {
+      feedback.textContent = "MISS!";
+      resetGame();
+      return;
+    }
   }
-  comboEl.textContent = combo.join(" ");
-  index = 0;
+
+  requestAnimationFrame(gameLoop);
+}
+
+function resetGame() {
+  gameRunning = false;
+  if (currentNote) currentNote.element.remove();
+  currentNote = null;
 }
 
 document.addEventListener("keydown", (e) => {
-  console.log("KEY PRESSED:", e.code); // 👈 DEBUG
-
-  if (!started && e.code === "Space") {
-    e.preventDefault();
-    started = true;
+  if (!gameRunning && e.code === "Space") {
+    gameRunning = true;
     score = 0;
     scoreEl.textContent = score;
-    infoEl.textContent = "Go!";
-    newCombo();
+    feedback.textContent = "GO!";
+    spawnNote();
+    gameLoop();
     return;
   }
 
-  if (!started) return;
+  if (!gameRunning || !currentNote) return;
 
- let key;
+  let key = e.key.toUpperCase();
 
-if (e.key === "Control") key = "CTRL";
-else if (e.key === "Shift") key = "SHIFT";
-else key = e.key.toUpperCase();
+  if (key === currentNote.key) {
+    let distance = Math.abs(currentNote.y - 320);
 
-  if (key === combo[index]) {
-    index++;
-
-    if (index === combo.length) {
-      score++;
-      scoreEl.textContent = score;
-      newCombo();
+    if (distance < 10) {
+      feedback.textContent = "PERFECT!";
+      score += 3;
+    } else if (distance < 30) {
+      feedback.textContent = "GOOD!";
+      score += 1;
+    } else {
+      feedback.textContent = "EARLY!";
     }
-  } else {
-    infoEl.textContent = "Wrong! Press SPACE to restart";
-    started = false;
-    comboEl.textContent = "Press SPACE";
+
+    scoreEl.textContent = score;
+
+    currentNote.element.remove();
+    spawnNote();
   }
 });
