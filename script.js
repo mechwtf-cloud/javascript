@@ -1,13 +1,18 @@
 const keys = ["W","A","S","D","Q","E","R","F"];
+
 let currentNote = null;
-let noteY = 0;
 let speed = 2;
 let gameRunning = false;
 let score = 0;
+let spawnCooldown = 0;
 
 const game = document.getElementById("game");
 const feedback = document.getElementById("feedback");
 const scoreEl = document.getElementById("score");
+
+function randomColor() {
+  return `hsl(${Math.random() * 360}, 100%, 60%)`;
+}
 
 function spawnNote() {
   const key = keys[Math.floor(Math.random() * keys.length)];
@@ -15,6 +20,10 @@ function spawnNote() {
   const note = document.createElement("div");
   note.classList.add("note");
   note.textContent = key;
+
+  note.style.color = randomColor();
+  note.style.borderColor = randomColor();
+  note.style.boxShadow = `0 0 15px ${randomColor()}`;
 
   game.appendChild(note);
 
@@ -28,33 +37,44 @@ function spawnNote() {
 function gameLoop() {
   if (!gameRunning) return;
 
+  requestAnimationFrame(gameLoop);
+
+  // increase difficulty over time
+  speed += 0.002;
+
   if (currentNote) {
     currentNote.y += speed;
     currentNote.element.style.top = currentNote.y + "px";
 
-    // too late = lose
     if (currentNote.y > 350) {
       feedback.textContent = "MISS!";
       resetGame();
       return;
     }
   }
-
-  requestAnimationFrame(gameLoop);
 }
 
 function resetGame() {
   gameRunning = false;
   if (currentNote) currentNote.element.remove();
   currentNote = null;
+  speed = 2;
+}
+
+function flashScreen(color) {
+  document.body.style.background = color;
+  setTimeout(() => document.body.style.background = "#111", 100);
 }
 
 document.addEventListener("keydown", (e) => {
   if (!gameRunning && e.code === "Space") {
     gameRunning = true;
     score = 0;
+    speed = 2;
+
     scoreEl.textContent = score;
     feedback.textContent = "GO!";
+
     spawnNote();
     gameLoop();
     return;
@@ -62,7 +82,7 @@ document.addEventListener("keydown", (e) => {
 
   if (!gameRunning || !currentNote) return;
 
-  let key = e.key.toUpperCase();
+  const key = e.key.toUpperCase();
 
   if (key === currentNote.key) {
     let distance = Math.abs(currentNote.y - 320);
@@ -70,6 +90,7 @@ document.addEventListener("keydown", (e) => {
     if (distance < 10) {
       feedback.textContent = "PERFECT!";
       score += 3;
+      flashScreen("#00ffcc");
     } else if (distance < 30) {
       feedback.textContent = "GOOD!";
       score += 1;
