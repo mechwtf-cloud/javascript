@@ -1,57 +1,50 @@
 body {
   margin: 0;
   overflow: hidden;
-  font-family: Arial;
-  background: linear-gradient(-45deg, #ff00cc, #00ffcc, #3300ff, #ffcc00);
-  background-size: 400% 400%;
-  animation: bg 8s infinite linear;
+  font-family: Arial, sans-serif;
+  background: radial-gradient(circle at top, #1b1b3a, #050510);
+  color: white;
 }
 
-@keyframes bg {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 100% 50%; }
-}
-
-/* UI TOP */
+/* TOP UI */
 #ui {
   position: absolute;
   top: 20px;
   width: 100%;
   text-align: center;
-  color: white;
   z-index: 10;
 }
 
 #score {
-  font-size: 40px;
+  font-size: 48px;
   font-weight: bold;
 }
 
 #feedback {
-  font-size: 30px;
-  margin-top: 10px;
+  font-size: 24px;
+  opacity: 0.8;
 }
 
-/* FULL SCREEN GAME AREA */
+/* GAME AREA */
 #game {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
+  width: 400px;
   height: 100vh;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.03);
+  border-left: 2px solid rgba(255,255,255,0.1);
+  border-right: 2px solid rgba(255,255,255,0.1);
 }
 
-/* HIT LINE (REAL CENTER LINE) */
-#game::after {
-  content: "";
+/* HIT LINE */
+#hitLine {
   position: absolute;
-  left: 0;
+  bottom: 20%;
   width: 100%;
-  height: 6px;
-  bottom: 20vh;
-
-  background: white;
-  box-shadow: 0 0 20px white;
+  height: 4px;
+  background: linear-gradient(90deg, #00ffff, #ffffff, #ff00ff);
+  box-shadow: 0 0 15px white;
 }
 
 /* NOTES */
@@ -59,31 +52,15 @@ body {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 40px;
+  font-size: 36px;
   font-weight: bold;
 
-  padding: 12px 18px;
+  padding: 10px 15px;
   border-radius: 12px;
 
-  border: 2px solid white;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.3);
 
+  backdrop-filter: blur(6px);
   text-shadow: 0 0 10px black;
-  transition: transform 0.05s linear;
-}
-
-/* GAME OVER BIG SCREEN */
-#gameOver {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  font-size: 80px;
-  font-weight: bold;
-  color: red;
-  background: rgba(0,0,0,0.7);
-
-  z-index: 999;
 }
