@@ -1,17 +1,16 @@
-const keys = ["W","A","S","D","Q","E","R","F"];
+const keys = ["W","A","S","D","Q","E"];
 
 let currentNote = null;
-let speed = 2;
+let speed = 3;
 let gameRunning = false;
+let paused = false;
 let score = 0;
-let spawnCooldown = 0;
 
 const game = document.getElementById("game");
 const feedback = document.getElementById("feedback");
 const scoreEl = document.getElementById("score");
-const GAME_HEIGHT = 650;
-const HIT_LINE = GAME_HEIGHT - 120;
 
+const HIT_LINE = window.innerHeight * 0.8;
 
 function randomColor() {
   return `hsl(${Math.random() * 360}, 100%, 60%)`;
@@ -26,36 +25,23 @@ function spawnNote() {
 
   note.style.color = randomColor();
   note.style.borderColor = randomColor();
-  note.style.boxShadow = `0 0 15px ${randomColor()}`;
 
   game.appendChild(note);
 
   currentNote = {
     element: note,
-    key: key,
+    key,
     y: 0
   };
 }
 
-function gameLoop() {
-  if (!gameRunning) return;
-
-  requestAnimationFrame(gameLoop);
-
-  // increase difficulty over time
-  speed += 0.002;
-
-  if (currentNote) {
-    currentNote.y += speed;
-    currentNote.element.style.top = currentNote.y + "px";
-
-    if (currentNote.y > 350) {
-      feedback.textContent = "MISS!";
-      resetGame();
-      return;
-    }
-  }
+function showGameOver() {
+  const div = document.createElement("div");
+  div.id = "gameOver";
+  div.textContent = "GAME OVER";
+  document.body.appendChild(div);
 }
+
 function resetGame() {
   gameRunning = false;
 
@@ -64,22 +50,35 @@ function resetGame() {
     currentNote = null;
   }
 
-  feedback.textContent = "GAME OVER";
-
-  // stop everything cleanly
-  cancelAnimationFrame(gameLoopId);
+  showGameOver();
 }
 
-function flashScreen(color) {
-  document.body.style.background = color;
-  setTimeout(() => document.body.style.background = "#111", 100);
+function gameLoop() {
+  if (!gameRunning || paused) return;
+
+  requestAnimationFrame(gameLoop);
+
+  speed += 0.002;
+
+  if (currentNote) {
+    currentNote.y += speed;
+    currentNote.element.style.top = currentNote.y + "px";
+
+    if (currentNote.y > window.innerHeight) {
+      feedback.textContent = "MISS!";
+      resetGame();
+      return;
+    }
+  }
 }
 
 document.addEventListener("keydown", (e) => {
+
+  /* ▶ START GAME */
   if (!gameRunning && e.code === "Space") {
     gameRunning = true;
     score = 0;
-    speed = 2;
+    speed = 3;
 
     scoreEl.textContent = score;
     feedback.textContent = "GO!";
@@ -89,18 +88,25 @@ document.addEventListener("keydown", (e) => {
     return;
   }
 
-  if (!gameRunning || !currentNote) return;
+  /* ⏸ PAUSE */
+  if (e.code === "KeyP") {
+    paused = !paused;
+    feedback.textContent = paused ? "PAUSED" : "GO!";
+    if (!paused) gameLoop();
+    return;
+  }
+
+  if (!gameRunning || !currentNote || paused) return;
 
   const key = e.key.toUpperCase();
 
   if (key === currentNote.key) {
     let distance = Math.abs(currentNote.y - HIT_LINE);
 
-    if (distance < 10) {
+    if (distance < 20) {
       feedback.textContent = "PERFECT!";
       score += 3;
-      flashScreen("#00ffcc");
-    } else if (distance < 30) {
+    } else if (distance < 50) {
       feedback.textContent = "GOOD!";
       score += 1;
     } else {
