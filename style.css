@@ -1,18 +1,36 @@
 body {
-  background: #111;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
   color: white;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   text-align: center;
-  margin-top: 100px;
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+h1 {
+  font-size: 40px;
+  margin-bottom: 20px;
 }
 
 #combo {
-  font-size: 50px;
-  margin: 20px;
-  letter-spacing: 15px;
+  font-size: 60px;
+  margin: 30px;
+  letter-spacing: 20px;
+  padding: 20px;
+  border-radius: 15px;
+  background: #020617;
+  box-shadow: 0 0 20px rgba(0,255,255,0.2);
 }
 
 #info {
-  font-size: 20px;
-  color: #aaa;
+  font-size: 22px;
+  color: #38bdf8;
+}
+
+h2 {
+  margin-top: 20px;
+  font-size: 28px;
 }
