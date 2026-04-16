@@ -75,7 +75,8 @@ function gameLoop() {
 }
 
 document.addEventListener("keydown", (e) => {
-
+  document.addEventListener("keydown", (e) => {
+    console.log(e.code);
   /* ▶ START GAME */
   if (!gameRunning && e.code === "Space") {
     gameRunning = true;
