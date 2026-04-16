@@ -3,21 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Key Combo Game</title>
+  <title>Pulse Grid</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="ui">
-    <h1>Key Combo Game</h1>
-    <div id="info">Press SPACE to start. Press P to pause.</div>
-    <div id="combo">Match the falling key near the hit line.</div>
-    <div id="scoreboard">Score: <span id="score">0</span></div>
-    <div id="feedback">Ready</div>
-  </div>
+  <div class="backdrop backdrop-left"></div>
+  <div class="backdrop backdrop-right"></div>
 
-  <div id="game">
-    <div id="hitLine"></div>
-  </div>
+  <main class="app-shell">
+    <section class="hero-panel">
+      <p class="eyebrow">JavaScript Rhythm Game</p>
+      <h1>Pulse Grid</h1>
+      <p id="info" class="headline">Press SPACE to start. Press P to pause. Hit the matching lane key on the line.</p>
+
+      <div class="stats-grid">
+        <article class="stat-card">
+          <span class="stat-label">Score</span>
+          <strong id="score">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Combo</span>
+          <strong id="comboCount">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Best</span>
+          <strong id="bestCombo">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Lives</span>
+          <strong id="lives">8</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Speed</span>
+          <strong id="speedDisplay">1.0x</strong>
+        </article>
+      </div>
+
+      <div class="status-strip">
+        <div id="feedback" class="feedback-text">Ready</div>
+        <div id="comboText" class="combo-text">Learn the lanes and build a streak.</div>
+      </div>
+    </section>
+
+    <section class="board-shell">
+      <div id="laneKeys" class="lane-keys" aria-hidden="true"></div>
+      <div id="game" class="game-board" aria-label="Rhythm lanes">
+        <div id="lanes" class="lanes"></div>
+        <div id="notes" class="notes-layer"></div>
+        <div id="hitLine"></div>
+      </div>
+    </section>
+  </main>
 
   <script src="script.js"></script>
 </body>
