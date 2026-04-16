@@ -1,28 +1,24 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Key Combo Game</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<h1>Key Combo Game</h1>
-<div id="combo">Press Start</div>
-<div id="info">Press SPACE to start</div>
-<h2>Score: <span id="score">0</span></h2>
+  <div id="ui">
+    <h1>Key Combo Game</h1>
+    <div id="info">Press SPACE to start. Press P to pause.</div>
+    <div id="combo">Match the falling key near the hit line.</div>
+    <div id="scoreboard">Score: <span id="score">0</span></div>
+    <div id="feedback">Ready</div>
+  </div>
 
   <div id="game">
-  <div id="target"></div>
-</div>
-<div id="feedback"></div>
-  
-<div id="ui">
-  <div id="score">0</div>
-  <div id="feedback"></div>
-</div>
+    <div id="hitLine"></div>
+  </div>
 
-<div id="game"></div>
-  
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
