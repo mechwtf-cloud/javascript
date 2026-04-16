@@ -9,8 +9,8 @@ let score = 0;
 const game = document.getElementById("game");
 const feedback = document.getElementById("feedback");
 const scoreEl = document.getElementById("score");
-
-const HIT_LINE = window.innerHeight * 0.8;
+const gameHeight = game.clientHeight;
+const HIT_LINE = gameHeight * 0.8;
 
 function randomColor() {
   return `hsl(${Math.random() * 360}, 100%, 60%)`;
