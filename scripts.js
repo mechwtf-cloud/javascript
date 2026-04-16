@@ -16,7 +16,7 @@ function newCombo() {
 document.addEventListener("keydown", (e) => {
   let key = e.key.toUpperCase();
 
-  if (!started && key === " ") {
+  if (!started && key === "Space") {
     started = true;
     score = 0;
     newCombo();
