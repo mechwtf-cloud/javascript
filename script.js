@@ -32,7 +32,11 @@ document.addEventListener("keydown", (e) => {
 
   if (!started) return;
 
-  let key = e.key.toUpperCase();
+ let key;
+
+if (e.key === "Control") key = "CTRL";
+else if (e.key === "Shift") key = "SHIFT";
+else key = e.key.toUpperCase();
 
   if (key === combo[index]) {
     index++;
