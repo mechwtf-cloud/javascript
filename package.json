@@ -1,0 +1,24 @@
+{
+  "name": "repo_inspect",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mechwtf-cloud/javascript.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/mechwtf-cloud/javascript/issues"
+  },
+  "homepage": "https://github.com/mechwtf-cloud/javascript#readme",
+  "devDependencies": {
+    "playwright": "^1.59.1"
+  }
+}
