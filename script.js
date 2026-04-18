@@ -17,10 +17,12 @@ const modeButtons = document.querySelectorAll("[data-view]");
 let activeView = "menu";
 
 const laneConfig = [
+
   { key: "W", color: "#ff8f66" },
   { key: "A", color: "#ffd85e" },
   { key: "S", color: "#55f0d5" },
   { key: "D", color: "#71a8ff" }
+
 ];
 
 const rhythmEls = {
