@@ -28,11 +28,11 @@
       <div class="menu-shell">
         <section class="menu-hero hero-panel">
           <p class="eyebrow">Pick Your Challenge</p>
-          <h2 class="section-title">Three games, one neon dashboard.</h2>
+          <h2 class="section-title">Four games, one neon dashboard.</h2>
           <p class="headline">
             Lock in on a harder four-key rhythm run, race through a typing sprint,
-            or survive a glowing memory gauntlet. Every mode shares the same arcade,
-            soundtrack, and quick swap menu.
+            survive a glowing memory gauntlet, or throw hands in a side-view neon brawler.
+            Every mode shares the same arcade, soundtrack, and quick swap menu.
           </p>
         </section>
 
@@ -56,6 +56,13 @@
             <h3>Echo Reactor</h3>
             <p>Watch the pad sequence, repeat it from memory, and hold your nerve as the pace keeps climbing.</p>
             <button class="primary-button" type="button" data-view="echo">Play Echo Reactor</button>
+          </article>
+
+          <article class="mode-card mode-card-brawl">
+            <p class="card-tag">Brawler</p>
+            <h3>Neon Brawl</h3>
+            <p>Hold center lane and smash rushers from both sides with quick left, right, jump, and sweep reactions.</p>
+            <button class="primary-button" type="button" data-view="brawl">Play Neon Brawl</button>
           </article>
         </section>
       </div>
@@ -231,6 +238,95 @@
               autocorrect="off"
               placeholder="Start typing the passage here..."
             ></textarea>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="brawlView" class="view">
+      <div class="view-shell">
+        <section class="hero-panel brawl-panel">
+          <p class="eyebrow">Brawler Mode</p>
+          <h2 class="section-title">Neon Brawl</h2>
+          <p id="brawlInfo" class="headline">Press SPACE to start. Use Left and Right to strike, Up to launch, Down to sweep, and P to pause.</p>
+
+          <div class="stats-grid">
+            <article class="stat-card">
+              <span class="stat-label">Health</span>
+              <strong id="brawlHealth">100%</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Score</span>
+              <strong id="brawlScore">0</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Combo</span>
+              <strong id="brawlCombo">0</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Wave</span>
+              <strong id="brawlWave">1</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Danger</span>
+              <strong id="brawlDanger">1.0x</strong>
+            </article>
+          </div>
+
+          <div class="status-strip">
+            <div id="brawlFeedback" class="feedback-text">Ready</div>
+            <div id="brawlHint" class="combo-text">Center up, read the lane, and answer each rusher with the right move.</div>
+          </div>
+
+          <div class="typing-actions">
+            <button id="brawlStartButton" class="primary-button" type="button">Start Fight</button>
+            <button id="brawlResetButton" class="ghost-button" type="button">Reset Fight</button>
+          </div>
+        </section>
+
+        <section class="board-shell">
+          <div class="brawl-move-legend">
+            <button class="brawl-move-chip" type="button" data-brawl-move="left">
+              <strong>Left</strong>
+              <span>Counter left rush</span>
+            </button>
+            <button class="brawl-move-chip" type="button" data-brawl-move="right">
+              <strong>Right</strong>
+              <span>Counter right rush</span>
+            </button>
+            <button class="brawl-move-chip" type="button" data-brawl-move="up">
+              <strong>Up</strong>
+              <span>Launch high attackers</span>
+            </button>
+            <button class="brawl-move-chip" type="button" data-brawl-move="down">
+              <strong>Down</strong>
+              <span>Sweep low attackers</span>
+            </button>
+          </div>
+
+          <div id="brawlArena" class="brawl-arena" aria-label="Neon Brawl arena">
+            <div class="brawl-skyline brawl-skyline-back"></div>
+            <div class="brawl-skyline brawl-skyline-front"></div>
+            <div class="brawl-floor"></div>
+            <div id="brawlEnemyLayer" class="brawl-enemy-layer"></div>
+            <div id="brawlImpactLayer" class="brawl-impact-layer"></div>
+            <div id="brawlPlayer" class="brawl-player idle" aria-hidden="true">
+              <div class="brawl-player-shadow"></div>
+              <div class="brawl-player-body">
+                <div class="brawl-player-head"></div>
+                <div class="brawl-player-torso"></div>
+                <div class="brawl-player-arm arm-left"></div>
+                <div class="brawl-player-arm arm-right"></div>
+                <div class="brawl-player-leg leg-left"></div>
+                <div class="brawl-player-leg leg-right"></div>
+              </div>
+            </div>
+            <div id="brawlOverlay" class="board-overlay">
+              <div>
+                <h3 id="brawlOverlayTitle">Neon Brawl</h3>
+                <p id="brawlOverlayText">Press SPACE or Start Fight to jump in. Read the side and height, then throw the right counter.</p>
+              </div>
+            </div>
           </div>
         </section>
       </div>
