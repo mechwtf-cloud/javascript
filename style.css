@@ -183,6 +183,14 @@ textarea {
     var(--panel);
 }
 
+.brawl-panel {
+  background:
+    radial-gradient(circle at top center, rgba(255, 94, 143, 0.14), transparent 34%),
+    radial-gradient(circle at 12% 82%, rgba(255, 216, 94, 0.12), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
+    var(--panel);
+}
+
 .mode-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -221,6 +229,10 @@ textarea {
 
 .mode-card-echo .card-tag {
   color: var(--lime);
+}
+
+.mode-card-brawl .card-tag {
+  color: var(--rose);
 }
 
 .primary-button,
@@ -685,6 +697,426 @@ textarea {
   text-transform: uppercase;
 }
 
+.brawl-move-legend {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.brawl-move-chip {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.brawl-move-chip:hover,
+.brawl-move-chip:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(255, 94, 143, 0.32);
+  box-shadow: 0 10px 24px rgba(255, 94, 143, 0.14);
+  outline: none;
+}
+
+.brawl-move-chip strong {
+  display: block;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+
+.brawl-move-chip span {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  line-height: 1.45;
+  font-size: 0.9rem;
+}
+
+.brawl-arena {
+  position: relative;
+  min-height: min(74vh, 820px);
+  overflow: hidden;
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at 50% 12%, rgba(255, 94, 143, 0.14), transparent 30%),
+    radial-gradient(circle at 8% 22%, rgba(126, 249, 255, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(17, 25, 50, 0.96), rgba(4, 7, 18, 0.98));
+}
+
+.brawl-arena::before,
+.brawl-arena::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.brawl-arena::before {
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 54px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 18%);
+  opacity: 0.45;
+}
+
+.brawl-arena::after {
+  inset: auto 12% 6%;
+  height: 26%;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 94, 143, 0.14), transparent 70%);
+  filter: blur(36px);
+}
+
+.brawl-skyline {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 24%;
+  height: 38%;
+  opacity: 0.7;
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  pointer-events: none;
+}
+
+.brawl-skyline-back {
+  background-image:
+    linear-gradient(180deg, rgba(126, 249, 255, 0.12), transparent),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 32px,
+      rgba(126, 249, 255, 0.14) 32px 46px,
+      rgba(126, 249, 255, 0.18) 46px 56px,
+      transparent 56px 86px,
+      rgba(255, 216, 94, 0.18) 86px 100px,
+      transparent 100px 136px
+    );
+  transform: translateY(12px);
+  opacity: 0.25;
+}
+
+.brawl-skyline-front {
+  height: 32%;
+  background-image:
+    linear-gradient(180deg, rgba(255, 94, 143, 0.16), transparent),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 18px,
+      rgba(255, 255, 255, 0.18) 18px 24px,
+      rgba(255, 94, 143, 0.22) 24px 38px,
+      transparent 38px 60px,
+      rgba(85, 240, 213, 0.22) 60px 72px,
+      transparent 72px 112px
+    );
+  opacity: 0.3;
+}
+
+.brawl-floor {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 30%;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 22%),
+    linear-gradient(180deg, rgba(16, 24, 48, 0), rgba(14, 12, 28, 0.78)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 78px),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 42px);
+  border-top: 1px solid rgba(126, 249, 255, 0.12);
+  transform: perspective(420px) rotateX(68deg);
+  transform-origin: bottom;
+}
+
+.brawl-enemy-layer,
+.brawl-impact-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.brawl-impact-layer {
+  pointer-events: none;
+}
+
+.brawl-player {
+  position: absolute;
+  left: 50%;
+  bottom: 17%;
+  width: 150px;
+  height: 260px;
+  transform: translateX(-50%);
+  z-index: 3;
+}
+
+.brawl-player-shadow {
+  position: absolute;
+  inset: auto 18% -4px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  filter: blur(8px);
+}
+
+.brawl-player-body {
+  position: absolute;
+  inset: 0;
+}
+
+.brawl-player-head,
+.brawl-player-torso,
+.brawl-player-arm,
+.brawl-player-leg {
+  position: absolute;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.2);
+}
+
+.brawl-player-head {
+  top: 12px;
+  left: 50%;
+  width: 54px;
+  height: 54px;
+  margin-left: -27px;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.42), transparent 32%),
+    linear-gradient(180deg, rgba(126, 249, 255, 0.3), rgba(255, 94, 143, 0.22));
+}
+
+.brawl-player-torso {
+  top: 68px;
+  left: 50%;
+  width: 62px;
+  height: 94px;
+  margin-left: -31px;
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgba(255, 94, 143, 0.32), rgba(12, 18, 42, 0.9)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent);
+}
+
+.brawl-player-arm {
+  top: 80px;
+  width: 26px;
+  height: 92px;
+  transform-origin: top center;
+}
+
+.brawl-player-leg {
+  top: 146px;
+  width: 26px;
+  height: 100px;
+  transform-origin: top center;
+}
+
+.brawl-player .arm-left {
+  left: 28px;
+  transform: rotate(16deg);
+}
+
+.brawl-player .arm-right {
+  right: 28px;
+  transform: rotate(-16deg);
+}
+
+.brawl-player .leg-left {
+  left: 50px;
+  transform: rotate(10deg);
+}
+
+.brawl-player .leg-right {
+  right: 50px;
+  transform: rotate(-10deg);
+}
+
+.brawl-player.attack-left .arm-left {
+  transform: translate(-18px, -10px) rotate(-74deg);
+}
+
+.brawl-player.attack-right .arm-right {
+  transform: translate(18px, -10px) rotate(74deg);
+}
+
+.brawl-player.attack-up .arm-left,
+.brawl-player.attack-up .arm-right {
+  top: 56px;
+}
+
+.brawl-player.attack-up .arm-left {
+  transform: translate(6px, -18px) rotate(-128deg);
+}
+
+.brawl-player.attack-up .arm-right {
+  transform: translate(-6px, -18px) rotate(128deg);
+}
+
+.brawl-player.attack-down .leg-left {
+  transform: translate(-12px, 8px) rotate(56deg);
+}
+
+.brawl-player.attack-down .leg-right {
+  transform: translate(12px, 8px) rotate(-56deg);
+}
+
+.brawl-player.hurt {
+  animation: boardImpactMiss 280ms ease-out;
+}
+
+.brawl-enemy {
+  position: absolute;
+  bottom: var(--enemy-bottom, 18%);
+  left: var(--enemy-left);
+  width: 92px;
+  height: 170px;
+  transform: translateX(-50%);
+  z-index: 2;
+  will-change: transform, left;
+}
+
+.brawl-enemy::before,
+.brawl-enemy::after,
+.brawl-enemy-body,
+.brawl-enemy-head,
+.brawl-enemy-weapon {
+  position: absolute;
+  display: block;
+}
+
+.brawl-enemy-head,
+.brawl-enemy-body,
+.brawl-enemy-weapon,
+.brawl-enemy::before,
+.brawl-enemy::after {
+  content: "";
+  border-radius: 999px;
+}
+
+.brawl-enemy-head {
+  top: 8px;
+  left: 50%;
+  width: 42px;
+  height: 42px;
+  margin-left: -21px;
+  background: linear-gradient(180deg, rgba(255, 216, 94, 0.34), rgba(255, 94, 143, 0.16));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.brawl-enemy-body {
+  top: 48px;
+  left: 50%;
+  width: 46px;
+  height: 78px;
+  margin-left: -23px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(19, 26, 51, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.brawl-enemy::before,
+.brawl-enemy::after {
+  bottom: 20px;
+  width: 18px;
+  height: 72px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(10, 16, 34, 0.8));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.brawl-enemy::before {
+  left: 26px;
+  transform: rotate(8deg);
+}
+
+.brawl-enemy::after {
+  right: 26px;
+  transform: rotate(-8deg);
+}
+
+.brawl-enemy-weapon {
+  top: 74px;
+  width: 16px;
+  height: 80px;
+  background: linear-gradient(180deg, rgba(126, 249, 255, 0.4), rgba(255, 255, 255, 0.06));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 18px rgba(126, 249, 255, 0.18);
+}
+
+.brawl-enemy.side-left .brawl-enemy-weapon {
+  right: 2px;
+  transform: rotate(-22deg);
+}
+
+.brawl-enemy.side-right .brawl-enemy-weapon {
+  left: 2px;
+  transform: rotate(22deg);
+}
+
+.brawl-enemy.height-high {
+  --enemy-bottom: 34%;
+}
+
+.brawl-enemy.height-low {
+  height: 118px;
+  --enemy-bottom: 10%;
+}
+
+.brawl-enemy.height-low .brawl-enemy-head {
+  top: 20px;
+  width: 32px;
+  height: 32px;
+  margin-left: -16px;
+}
+
+.brawl-enemy.height-low .brawl-enemy-body {
+  top: 46px;
+  width: 58px;
+  height: 34px;
+  margin-left: -29px;
+}
+
+.brawl-enemy.height-low::before,
+.brawl-enemy.height-low::after {
+  height: 38px;
+  bottom: 6px;
+}
+
+.brawl-enemy.height-low .brawl-enemy-weapon {
+  top: 20px;
+  height: 54px;
+}
+
+.brawl-enemy.height-high .brawl-enemy-head {
+  top: -8px;
+}
+
+.brawl-enemy.height-high::before,
+.brawl-enemy.height-high::after {
+  bottom: 34px;
+}
+
+.brawl-enemy.threat {
+  filter: brightness(1.14);
+}
+
+.brawl-enemy.defeated {
+  animation: hitBurst 320ms ease-out forwards;
+}
+
+.brawl-enemy-hit {
+  position: absolute;
+  width: 88px;
+  height: 88px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.34);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.2), transparent 68%);
+  box-shadow: 0 0 28px rgba(255, 94, 143, 0.28);
+  transform: translate(-50%, -50%);
+  animation: hitBurst 320ms ease-out forwards;
+}
+
 .typing-shell {
   display: grid;
   gap: 18px;
@@ -914,7 +1346,8 @@ textarea {
 
   .game-board,
   .typing-shell,
-  .echo-board {
+  .echo-board,
+  .brawl-arena {
     min-height: 68vh;
   }
 }
@@ -958,6 +1391,25 @@ textarea {
   .typing-input {
     min-height: 160px;
     font-size: 1.05rem;
+  }
+
+  .brawl-move-legend {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .brawl-move-chip {
+    min-height: 86px;
+    padding: 12px 14px;
+  }
+
+  .brawl-player {
+    width: 112px;
+    height: 210px;
+  }
+
+  .brawl-enemy {
+    width: 74px;
+    height: 136px;
   }
 
   .echo-pad-grid {

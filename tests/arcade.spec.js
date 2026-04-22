@@ -6,6 +6,7 @@ test("menu shows all arcade modes", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Play Pulse Grid" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Play Word Rush" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Play Echo Reactor" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play Neon Brawl" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Music:/ })).toBeVisible();
 });
 
@@ -66,4 +67,44 @@ test("echo reactor clears a round and fails on a wrong answer", async ({ page })
   await page.keyboard.press("ArrowRight");
 
   await expect(page.locator("#echoOverlayTitle")).toHaveText("Reactor Down");
+});
+
+test("neon brawl rewards the right counter and loses on a bad read", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Play Neon Brawl" }).click();
+
+  await page.evaluate(() => {
+    const arena = document.getElementById("brawlArena");
+    window.__arcadeTest.stopBrawlLoop();
+    window.__arcadeTest.clearBrawlEnemies();
+    window.__arcadeTest.setBrawlState({ running: true, health: 100, combo: 0, score: 0, wave: 1 });
+    window.__arcadeTest.spawnBrawlEnemy({
+      side: "left",
+      height: "mid",
+      x: arena.clientWidth / 2 - 110,
+      speed: 0
+    });
+  });
+
+  await page.keyboard.press("ArrowLeft");
+
+  await expect
+    .poll(async () => page.evaluate(() => window.__arcadeTest.getBrawlState().score))
+    .toBeGreaterThan(0);
+
+  await page.evaluate(() => {
+    const arena = document.getElementById("brawlArena");
+    window.__arcadeTest.clearBrawlEnemies();
+    window.__arcadeTest.setBrawlState({ running: true, health: 12, combo: 0, score: 0, wave: 1 });
+    window.__arcadeTest.spawnBrawlEnemy({
+      side: "left",
+      height: "mid",
+      x: arena.clientWidth / 2 - 100,
+      speed: 0
+    });
+  });
+
+  await page.keyboard.press("ArrowUp");
+
+  await expect(page.locator("#brawlOverlayTitle")).toHaveText("Fight Over");
 });

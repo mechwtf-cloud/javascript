@@ -2,20 +2,23 @@ const views = {
   menu: document.getElementById("menuView"),
   rhythm: document.getElementById("rhythmView"),
   typing: document.getElementById("typingView"),
-  echo: document.getElementById("echoView")
+  echo: document.getElementById("echoView"),
+  brawl: document.getElementById("brawlView")
 };
 
 const viewTitles = {
   menu: "Choose a mode",
   rhythm: "Pulse Grid",
   typing: "Word Rush",
-  echo: "Echo Reactor"
+  echo: "Echo Reactor",
+  brawl: "Neon Brawl"
 };
 
 const viewLabelEl = document.getElementById("viewLabel");
 const menuButtonEl = document.getElementById("menuButton");
 const musicButtonEl = document.getElementById("musicButton");
 const modeButtons = document.querySelectorAll("[data-view]");
+const brawlMoveButtons = document.querySelectorAll("[data-brawl-move]");
 
 let activeView = "menu";
 
@@ -82,6 +85,25 @@ const echoEls = {
   replay: document.getElementById("echoReplayButton")
 };
 
+const brawlEls = {
+  health: document.getElementById("brawlHealth"),
+  score: document.getElementById("brawlScore"),
+  combo: document.getElementById("brawlCombo"),
+  wave: document.getElementById("brawlWave"),
+  danger: document.getElementById("brawlDanger"),
+  feedback: document.getElementById("brawlFeedback"),
+  hint: document.getElementById("brawlHint"),
+  arena: document.getElementById("brawlArena"),
+  enemyLayer: document.getElementById("brawlEnemyLayer"),
+  impactLayer: document.getElementById("brawlImpactLayer"),
+  player: document.getElementById("brawlPlayer"),
+  overlay: document.getElementById("brawlOverlay"),
+  overlayTitle: document.getElementById("brawlOverlayTitle"),
+  overlayText: document.getElementById("brawlOverlayText"),
+  start: document.getElementById("brawlStartButton"),
+  reset: document.getElementById("brawlResetButton")
+};
+
 const RHYTHM_HIT_LINE_RATIO = 0.82;
 const RHYTHM_PERFECT_WINDOW = 44;
 const RHYTHM_GREAT_WINDOW = 84;
@@ -136,6 +158,15 @@ const musicScenes = {
     bass: [45, null, 45, 48, 52, null, 53, null, 45, null, 45, 48, 55, null, 53, null],
     lead: [79, null, 81, 84, 86, null, 84, null, 81, null, 79, 76, 74, null, 76, null],
     chords: [[57, 60, 64], [60, 64, 67], [62, 65, 69], [55, 59, 62]]
+  },
+  brawl: {
+    bpm: 142,
+    kick: [0, 2, 4, 6, 8, 11, 14],
+    snare: [4, 12],
+    hat: [1, 3, 5, 7, 9, 10, 11, 13, 15],
+    bass: [41, null, 41, 44, 48, null, 44, null, 41, 44, 48, null, 44, 41, 39, null],
+    lead: [76, null, 79, 81, null, 84, 81, null, 79, null, 76, 72, null, 74, 76, null],
+    chords: [[53, 57, 60], [56, 60, 63], [48, 52, 55], [50, 53, 57]]
   }
 };
 
@@ -204,6 +235,26 @@ const echoState = {
   timeoutIds: []
 };
 
+const brawlState = {
+  running: false,
+  paused: false,
+  health: 100,
+  maxHealth: 100,
+  score: 0,
+  combo: 0,
+  wave: 1,
+  kills: 0,
+  elapsed: 0,
+  lastFrameTime: 0,
+  spawnTimer: 0,
+  animationFrameId: null,
+  moveTimerId: null,
+  currentMove: "idle",
+  dangerMultiplier: 1,
+  lastSpawnSide: "right",
+  enemies: []
+};
+
 function showView(viewName) {
   activeView = viewName;
 
@@ -227,6 +278,10 @@ function showView(viewName) {
 
   if (viewName !== "echo") {
     resetEchoMode();
+  }
+
+  if (viewName !== "brawl") {
+    resetBrawlMode();
   }
 
   setMusicScene(viewName);
@@ -750,6 +805,37 @@ function playGameOverTone() {
       duration: 0.22
     });
   }, 120);
+}
+
+function playBrawlTone(kind) {
+  const toneMap = {
+    punch: { frequency: 261.63, pitchTo: 392, type: "sawtooth", gainAmount: 0.08, duration: 0.11 },
+    launcher: { frequency: 392, pitchTo: 659.25, type: "triangle", gainAmount: 0.09, duration: 0.14 },
+    sweep: { frequency: 220, pitchTo: 329.63, type: "square", gainAmount: 0.075, duration: 0.12 },
+    hurt: { frequency: 196, pitchTo: 130.81, type: "sawtooth", gainAmount: 0.07, duration: 0.13 },
+    whiff: { frequency: 246.94, pitchTo: 220, type: "triangle", gainAmount: 0.045, duration: 0.08 }
+  };
+
+  const config = toneMap[kind] || toneMap.punch;
+  playImmediateTone(config);
+
+  if (kind === "punch" || kind === "launcher" || kind === "sweep") {
+    playImmediateNoise({
+      duration: 0.05,
+      gainAmount: 0.024,
+      filterType: "highpass",
+      filterFrequency: kind === "launcher" ? 3600 : 2400
+    });
+  }
+
+  if (kind === "hurt") {
+    playImmediateNoise({
+      duration: 0.08,
+      gainAmount: 0.03,
+      filterType: "highpass",
+      filterFrequency: 1900
+    });
+  }
 }
 
 function buildRhythmBoard() {
@@ -1653,6 +1739,422 @@ function resetEchoMode() {
   );
 }
 
+function updateBrawlHud() {
+  brawlEls.health.textContent = `${Math.round(brawlState.health)}%`;
+  brawlEls.score.textContent = String(brawlState.score);
+  brawlEls.combo.textContent = String(brawlState.combo);
+  brawlEls.wave.textContent = String(brawlState.wave);
+  brawlEls.danger.textContent = `${brawlState.dangerMultiplier.toFixed(1)}x`;
+
+  if (brawlState.health > 55) {
+    brawlEls.health.style.color = "";
+  } else if (brawlState.health > 25) {
+    brawlEls.health.style.color = "#ffd36b";
+  } else {
+    brawlEls.health.style.color = "#ff8ea8";
+  }
+}
+
+function setBrawlStatus(title, detail, accent = "") {
+  brawlEls.feedback.textContent = title;
+  brawlEls.feedback.style.color = accent;
+  brawlEls.hint.textContent = detail;
+}
+
+function showBrawlOverlay(title, text) {
+  brawlEls.overlay.classList.remove("hidden");
+  brawlEls.overlayTitle.textContent = title;
+  brawlEls.overlayText.textContent = text;
+}
+
+function hideBrawlOverlay() {
+  brawlEls.overlay.classList.add("hidden");
+}
+
+function stopBrawlLoop() {
+  if (brawlState.animationFrameId !== null) {
+    cancelAnimationFrame(brawlState.animationFrameId);
+    brawlState.animationFrameId = null;
+  }
+}
+
+function clearBrawlEnemies() {
+  brawlState.enemies.forEach((enemy) => enemy.element.remove());
+  brawlState.enemies = [];
+}
+
+function getBrawlArenaMetrics() {
+  const width = brawlEls.arena.clientWidth || 900;
+  const height = brawlEls.arena.clientHeight || 640;
+
+  return {
+    width,
+    height,
+    centerX: width / 2
+  };
+}
+
+function getBrawlEnemyBottom(height) {
+  if (height === "high") {
+    return "34%";
+  }
+
+  if (height === "low") {
+    return "10%";
+  }
+
+  return "18%";
+}
+
+function getBrawlImpactY(height) {
+  const arenaHeight = brawlEls.arena.clientHeight || 640;
+
+  if (height === "high") {
+    return arenaHeight * 0.37;
+  }
+
+  if (height === "low") {
+    return arenaHeight * 0.78;
+  }
+
+  return arenaHeight * 0.58;
+}
+
+function spawnBrawlImpact(x, y, accent) {
+  const impact = document.createElement("div");
+  impact.className = "brawl-enemy-hit";
+  impact.style.left = `${x}px`;
+  impact.style.top = `${y}px`;
+
+  if (accent) {
+    impact.style.boxShadow = `0 0 28px ${accent}`;
+    impact.style.borderColor = accent;
+  }
+
+  brawlEls.impactLayer.appendChild(impact);
+  impact.addEventListener("animationend", () => {
+    impact.remove();
+  });
+}
+
+function setBrawlPlayerMove(moveName, duration = 180) {
+  if (brawlState.moveTimerId) {
+    clearTimeout(brawlState.moveTimerId);
+  }
+
+  brawlState.currentMove = moveName;
+  brawlEls.player.className = `brawl-player ${moveName}`;
+
+  if (moveName === "idle") {
+    return;
+  }
+
+  brawlState.moveTimerId = setTimeout(() => {
+    brawlState.currentMove = "idle";
+    brawlEls.player.className = "brawl-player idle";
+  }, duration);
+}
+
+function createBrawlEnemy(side, height) {
+  const metrics = getBrawlArenaMetrics();
+  const enemyEl = document.createElement("div");
+  enemyEl.className = `brawl-enemy side-${side} height-${height}`;
+  enemyEl.innerHTML = `
+    <span class="brawl-enemy-head"></span>
+    <span class="brawl-enemy-body"></span>
+    <span class="brawl-enemy-weapon"></span>
+  `;
+
+  const enemy = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    side,
+    height,
+    x: side === "left" ? -72 : metrics.width + 72,
+    speed: (250 + Math.random() * 45 + brawlState.wave * 16) * brawlState.dangerMultiplier,
+    threatened: false,
+    element: enemyEl
+  };
+
+  enemyEl.style.bottom = getBrawlEnemyBottom(height);
+  enemyEl.style.left = `${enemy.x}px`;
+
+  brawlEls.enemyLayer.appendChild(enemyEl);
+  brawlState.enemies.push(enemy);
+  return enemy;
+}
+
+function chooseBrawlEnemyHeight() {
+  const roll = Math.random();
+
+  if (brawlState.wave <= 2) {
+    if (roll < 0.64) {
+      return "mid";
+    }
+
+    return roll < 0.84 ? "high" : "low";
+  }
+
+  if (roll < 0.45) {
+    return "mid";
+  }
+
+  return roll < 0.73 ? "high" : "low";
+}
+
+function spawnBrawlEnemy() {
+  const side = brawlState.lastSpawnSide === "left" ? "right" : "left";
+  brawlState.lastSpawnSide = side;
+  return createBrawlEnemy(side, chooseBrawlEnemyHeight());
+}
+
+function removeBrawlEnemy(enemy) {
+  const enemyIndex = brawlState.enemies.findIndex((entry) => entry.id === enemy.id);
+
+  if (enemyIndex !== -1) {
+    brawlState.enemies.splice(enemyIndex, 1);
+  }
+
+  enemy.element.remove();
+}
+
+function getBrawlRequiredMove(enemy) {
+  if (enemy.height === "high") {
+    return "up";
+  }
+
+  if (enemy.height === "low") {
+    return "down";
+  }
+
+  return enemy.side;
+}
+
+function getClosestBrawlEnemy(predicate) {
+  const { centerX } = getBrawlArenaMetrics();
+  let result = null;
+
+  brawlState.enemies.forEach((enemy) => {
+    const distance = Math.abs(enemy.x - centerX);
+
+    if (!predicate(enemy, distance)) {
+      return;
+    }
+
+    if (!result || distance < result.distance) {
+      result = { enemy, distance };
+    }
+  });
+
+  return result;
+}
+
+function defeatBrawlEnemy(enemy, moveName) {
+  const moveLabelMap = {
+    left: { title: "COUNTER", detail: "Clean left read.", accent: "#ffcf7f", tone: "punch" },
+    right: { title: "COUNTER", detail: "Clean right read.", accent: "#7ef9ff", tone: "punch" },
+    up: { title: "LAUNCH", detail: "High attacker cracked open.", accent: "#9be38e", tone: "launcher" },
+    down: { title: "SWEEP", detail: "Low attacker clipped hard.", accent: "#ff8ea8", tone: "sweep" }
+  };
+  const label = moveLabelMap[moveName] || moveLabelMap.left;
+
+  brawlState.combo += 1;
+  brawlState.kills += 1;
+  brawlState.wave = 1 + Math.floor(brawlState.kills / 8);
+  brawlState.score += 24 + brawlState.wave * 6 + brawlState.combo * 3;
+  brawlState.health = Math.min(brawlState.maxHealth, brawlState.health + (moveName === "up" ? 4 : 2));
+  updateBrawlHud();
+  setBrawlStatus(label.title, `${label.detail} ${brawlState.combo} combo rolling.`, label.accent);
+  spawnBrawlImpact(enemy.x, getBrawlImpactY(enemy.height), label.accent);
+  pulseElement(brawlEls.arena, "impact-good", 220);
+  playBrawlTone(label.tone);
+  enemy.element.classList.add("defeated");
+  removeBrawlEnemy(enemy);
+}
+
+function damageBrawlPlayer(amount, message, accent = "#ff8ea8") {
+  brawlState.health = Math.max(0, brawlState.health - amount);
+  brawlState.combo = 0;
+  updateBrawlHud();
+  setBrawlStatus("HIT", `${message} Health at ${Math.round(brawlState.health)}%.`, accent);
+  setBrawlPlayerMove("hurt", 220);
+  pulseElement(brawlEls.arena, "impact-miss", 280);
+  playBrawlTone("hurt");
+
+  if (brawlState.health <= 0) {
+    finishBrawlGame("The rush finally broke through. Reset and hold the lane tighter next run.");
+  }
+}
+
+function performBrawlMove(moveName) {
+  if (!brawlState.running || brawlState.paused) {
+    return;
+  }
+
+  const poseClass = {
+    left: "attack-left",
+    right: "attack-right",
+    up: "attack-up",
+    down: "attack-down"
+  }[moveName] || "idle";
+
+  setBrawlPlayerMove(poseClass, 180);
+
+  const target = getClosestBrawlEnemy((enemy, distance) => {
+    return getBrawlRequiredMove(enemy) === moveName && distance <= 168;
+  });
+
+  if (target) {
+    defeatBrawlEnemy(target.enemy, moveName);
+    return;
+  }
+
+  const badRead = getClosestBrawlEnemy((enemy, distance) => {
+    return getBrawlRequiredMove(enemy) !== moveName && distance <= 124;
+  });
+
+  if (badRead) {
+    const enemy = badRead.enemy;
+    removeBrawlEnemy(enemy);
+    damageBrawlPlayer(14, "Bad read in the pocket. That commit got punished.");
+    return;
+  }
+
+  brawlState.combo = 0;
+  updateBrawlHud();
+  setBrawlStatus("WHIFF", "No target in range. Reset your feet and read the next side.", "#ffb347");
+  playBrawlTone("whiff");
+}
+
+function finishBrawlGame(reason) {
+  brawlState.running = false;
+  brawlState.paused = false;
+  stopBrawlLoop();
+  clearBrawlEnemies();
+  setBrawlStatus("DOWN", reason, "#ff8ea8");
+  showBrawlOverlay(
+    "Fight Over",
+    `Score ${brawlState.score}. Wave ${brawlState.wave}. Best answer is another round. Press SPACE or Start Fight.`
+  );
+  playGameOverTone();
+}
+
+function startBrawlGame() {
+  hideBrawlOverlay();
+  stopBrawlLoop();
+  clearBrawlEnemies();
+
+  brawlState.running = true;
+  brawlState.paused = false;
+  brawlState.health = brawlState.maxHealth;
+  brawlState.score = 0;
+  brawlState.combo = 0;
+  brawlState.wave = 1;
+  brawlState.kills = 0;
+  brawlState.elapsed = 0;
+  brawlState.lastFrameTime = 0;
+  brawlState.spawnTimer = 0;
+  brawlState.dangerMultiplier = 1;
+  brawlState.lastSpawnSide = Math.random() < 0.5 ? "left" : "right";
+  setBrawlPlayerMove("idle", 0);
+  updateBrawlHud();
+  setBrawlStatus("FIGHT", "Left and right punish side rushers. Up launches high threats. Down sweeps sliders.", "#7ef9ff");
+  spawnBrawlEnemy();
+  brawlState.animationFrameId = requestAnimationFrame(runBrawlLoop);
+}
+
+function toggleBrawlPause() {
+  if (!brawlState.running) {
+    return;
+  }
+
+  brawlState.paused = !brawlState.paused;
+
+  if (brawlState.paused) {
+    stopBrawlLoop();
+    setBrawlStatus("PAUSED", "Press P to jump back into the fight.", "#ffd36b");
+    showBrawlOverlay("Paused", "Press P to continue or Back to Menu to switch games.");
+    return;
+  }
+
+  hideBrawlOverlay();
+  brawlState.lastFrameTime = 0;
+  setBrawlStatus("FIGHT", "Back in. Read the height, then commit hard.", "#7ef9ff");
+  brawlState.animationFrameId = requestAnimationFrame(runBrawlLoop);
+}
+
+function resetBrawlMode() {
+  brawlState.running = false;
+  brawlState.paused = false;
+  brawlState.health = brawlState.maxHealth;
+  brawlState.score = 0;
+  brawlState.combo = 0;
+  brawlState.wave = 1;
+  brawlState.kills = 0;
+  brawlState.elapsed = 0;
+  brawlState.lastFrameTime = 0;
+  brawlState.spawnTimer = 0;
+  brawlState.dangerMultiplier = 1;
+  stopBrawlLoop();
+  clearBrawlEnemies();
+  setBrawlPlayerMove("idle", 0);
+  updateBrawlHud();
+  setBrawlStatus("Ready", "Use left and right for side rushers, up for high attacks, and down for low sweeps.", "");
+  showBrawlOverlay(
+    "Neon Brawl",
+    "Press SPACE or Start Fight to begin. Read the side and height, then answer with the right counter."
+  );
+}
+
+function runBrawlLoop(timestamp) {
+  if (!brawlState.running || brawlState.paused || activeView !== "brawl") {
+    brawlState.animationFrameId = null;
+    return;
+  }
+
+  if (!brawlState.lastFrameTime) {
+    brawlState.lastFrameTime = timestamp;
+  }
+
+  const deltaTime = Math.min(0.05, (timestamp - brawlState.lastFrameTime) / 1000);
+  const metrics = getBrawlArenaMetrics();
+  brawlState.lastFrameTime = timestamp;
+  brawlState.elapsed += deltaTime;
+  brawlState.spawnTimer += deltaTime * 1000;
+  brawlState.dangerMultiplier = 1 + brawlState.elapsed * 0.04 + (brawlState.wave - 1) * 0.16;
+
+  const maxEnemies = Math.min(4, 2 + Math.floor(brawlState.wave / 3));
+  const spawnInterval = Math.max(280, 930 - brawlState.elapsed * 18 - (brawlState.wave - 1) * 56);
+
+  while (brawlState.spawnTimer >= spawnInterval && brawlState.enemies.length < maxEnemies) {
+    spawnBrawlEnemy();
+    brawlState.spawnTimer -= spawnInterval;
+  }
+
+  for (let enemyIndex = brawlState.enemies.length - 1; enemyIndex >= 0; enemyIndex -= 1) {
+    const enemy = brawlState.enemies[enemyIndex];
+    const direction = enemy.side === "left" ? 1 : -1;
+    enemy.x += direction * enemy.speed * deltaTime;
+    enemy.element.style.left = `${enemy.x}px`;
+
+    const distance = Math.abs(enemy.x - metrics.centerX);
+    const isThreat = distance <= 168;
+    enemy.element.classList.toggle("threat", isThreat);
+
+    if (distance <= 52) {
+      removeBrawlEnemy(enemy);
+      damageBrawlPlayer(18, "An attacker got all the way in.");
+    }
+  }
+
+  updateBrawlHud();
+
+  if (brawlState.running && !brawlState.paused) {
+    brawlState.animationFrameId = requestAnimationFrame(runBrawlLoop);
+  } else {
+    brawlState.animationFrameId = null;
+  }
+}
+
 document.addEventListener("pointerdown", resumeArcadeAudio, { passive: true });
 document.addEventListener("keydown", (event) => {
   resumeArcadeAudio();
@@ -1725,6 +2227,42 @@ document.addEventListener("keydown", (event) => {
       event.preventDefault();
       handleEchoInput(padIndex);
     }
+    return;
+  }
+
+  if (activeView === "brawl") {
+    if (event.code === "Space") {
+      event.preventDefault();
+
+      if (!brawlState.running) {
+        startBrawlGame();
+      }
+      return;
+    }
+
+    if (event.code === "KeyP") {
+      event.preventDefault();
+      toggleBrawlPause();
+      return;
+    }
+
+    const moveMap = {
+      ArrowLeft: "left",
+      ArrowRight: "right",
+      ArrowUp: "up",
+      ArrowDown: "down",
+      KeyA: "left",
+      KeyD: "right",
+      KeyW: "up",
+      KeyS: "down"
+    };
+
+    const moveName = moveMap[event.code];
+
+    if (moveName) {
+      event.preventDefault();
+      performBrawlMove(moveName);
+    }
   }
 });
 
@@ -1762,11 +2300,28 @@ echoEls.replay.addEventListener("click", () => {
   replayEchoSequence(true);
 });
 
+brawlEls.start.addEventListener("click", () => {
+  resumeArcadeAudio();
+  startBrawlGame();
+});
+
+brawlEls.reset.addEventListener("click", () => {
+  resetBrawlMode();
+});
+
+brawlMoveButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    resumeArcadeAudio();
+    performBrawlMove(button.dataset.brawlMove);
+  });
+});
+
 buildRhythmBoard();
 buildEchoBoard();
 updateMusicButton();
 resetRhythmMode();
 resetEchoMode();
+resetBrawlMode();
 setupTypingRound(true);
 showView("menu");
 
@@ -1836,5 +2391,55 @@ window.__arcadeTest = {
   },
   getTypingText() {
     return typingState.text;
+  },
+  startBrawlGame,
+  clearBrawlEnemies,
+  stopBrawlLoop,
+  setBrawlState(options = {}) {
+    brawlState.running = options.running ?? true;
+    brawlState.paused = options.paused ?? false;
+    brawlState.health = options.health ?? brawlState.maxHealth;
+    brawlState.score = options.score ?? 0;
+    brawlState.combo = options.combo ?? 0;
+    brawlState.wave = options.wave ?? 1;
+    brawlState.kills = options.kills ?? 0;
+    brawlState.elapsed = options.elapsed ?? 0;
+    brawlState.dangerMultiplier = options.dangerMultiplier ?? 1;
+    hideBrawlOverlay();
+    updateBrawlHud();
+  },
+  spawnBrawlEnemy(options = {}) {
+    const enemy = createBrawlEnemy(options.side || "left", options.height || "mid");
+    if (typeof options.x === "number") {
+      enemy.x = options.x;
+      enemy.element.style.left = `${enemy.x}px`;
+    }
+    if (typeof options.speed === "number") {
+      enemy.speed = options.speed;
+    }
+    return {
+      id: enemy.id,
+      side: enemy.side,
+      height: enemy.height,
+      x: enemy.x
+    };
+  },
+  performBrawlMove,
+  getBrawlState() {
+    return {
+      running: brawlState.running,
+      paused: brawlState.paused,
+      health: brawlState.health,
+      score: brawlState.score,
+      combo: brawlState.combo,
+      wave: brawlState.wave,
+      dangerMultiplier: brawlState.dangerMultiplier,
+      enemies: brawlState.enemies.map((enemy) => ({
+        id: enemy.id,
+        side: enemy.side,
+        height: enemy.height,
+        x: enemy.x
+      }))
+    };
   }
 };
