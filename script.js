@@ -1,32 +1,41 @@
 const views = {
   menu: document.getElementById("menuView"),
   rhythm: document.getElementById("rhythmView"),
-  typing: document.getElementById("typingView")
+  typing: document.getElementById("typingView"),
+  echo: document.getElementById("echoView")
 };
 
 const viewTitles = {
   menu: "Choose a mode",
   rhythm: "Pulse Grid",
-  typing: "Word Rush"
+  typing: "Word Rush",
+  echo: "Echo Reactor"
 };
 
 const viewLabelEl = document.getElementById("viewLabel");
 const menuButtonEl = document.getElementById("menuButton");
+const musicButtonEl = document.getElementById("musicButton");
 const modeButtons = document.querySelectorAll("[data-view]");
 
 let activeView = "menu";
 
 const laneConfig = [
-
   { key: "W", color: "#ff8f66" },
   { key: "A", color: "#ffd85e" },
   { key: "S", color: "#55f0d5" },
   { key: "D", color: "#71a8ff" }
+];
 
+const echoPadConfig = [
+  { label: "North", subtitle: "Lift the signal", key: "ArrowUp", keyLabel: "Up", color: "#71a8ff", tone: 659.25 },
+  { label: "Nova", subtitle: "Snap right", key: "ArrowRight", keyLabel: "Right", color: "#ffd85e", tone: 783.99 },
+  { label: "Flux", subtitle: "Cut left", key: "ArrowLeft", keyLabel: "Left", color: "#ff7a8a", tone: 523.25 },
+  { label: "South", subtitle: "Drop low", key: "ArrowDown", keyLabel: "Down", color: "#55f0d5", tone: 587.33 }
 ];
 
 const rhythmEls = {
   score: document.getElementById("rhythmScore"),
+  shield: document.getElementById("rhythmShield"),
   combo: document.getElementById("rhythmComboCount"),
   bestCombo: document.getElementById("rhythmBestCombo"),
   keySet: document.getElementById("rhythmKeySet"),
@@ -40,32 +49,6 @@ const rhythmEls = {
   overlay: document.getElementById("rhythmOverlay"),
   overlayTitle: document.getElementById("rhythmOverlayTitle"),
   overlayText: document.getElementById("rhythmOverlayText")
-};
-
-const RHYTHM_HIT_LINE_RATIO = 0.82;
-const RHYTHM_PERFECT_WINDOW = 44;
-const RHYTHM_GREAT_WINDOW = 84;
-const RHYTHM_MISS_WINDOW = 176;
-
-const rhythmLaneEls = [];
-const rhythmLaneKeyEls = [];
-const rhythmLaneFlashTimers = [];
-let rhythmFeedbackTimer = null;
-let rhythmAudioContext = null;
-
-const rhythmState = {
-  running: false,
-  paused: false,
-  score: 0,
-  combo: 0,
-  bestCombo: 0,
-  baseSpeed: 320,
-  currentSpeed: 320,
-  spawnTimer: 0,
-  elapsed: 0,
-  lastFrameTime: 0,
-  animationFrameId: null,
-  notes: []
 };
 
 const typingEls = {
@@ -82,12 +65,116 @@ const typingEls = {
   reset: document.getElementById("typingResetButton")
 };
 
+const echoEls = {
+  round: document.getElementById("echoRound"),
+  score: document.getElementById("echoScore"),
+  lives: document.getElementById("echoLives"),
+  streak: document.getElementById("echoStreak"),
+  pace: document.getElementById("echoPace"),
+  feedback: document.getElementById("echoFeedback"),
+  hint: document.getElementById("echoHint"),
+  board: document.getElementById("echoBoard"),
+  padGrid: document.getElementById("echoPadGrid"),
+  overlay: document.getElementById("echoOverlay"),
+  overlayTitle: document.getElementById("echoOverlayTitle"),
+  overlayText: document.getElementById("echoOverlayText"),
+  start: document.getElementById("echoStartButton"),
+  replay: document.getElementById("echoReplayButton")
+};
+
+const RHYTHM_HIT_LINE_RATIO = 0.82;
+const RHYTHM_PERFECT_WINDOW = 44;
+const RHYTHM_GREAT_WINDOW = 84;
+const RHYTHM_MISS_WINDOW = 176;
+
+const rhythmLaneEls = [];
+const rhythmLaneKeyEls = [];
+const rhythmLaneFlashTimers = [];
+const echoPadEls = [];
+const echoPadTimers = [];
+
+let rhythmFeedbackTimer = null;
+let arcadeAudioContext = null;
+let arcadeMasterGain = null;
+let arcadeMusicGain = null;
+let arcadeSfxGain = null;
+let arcadeNoiseBuffer = null;
+
+const musicScenes = {
+  menu: {
+    bpm: 106,
+    kick: [0, 8],
+    snare: [4, 12],
+    hat: [2, 6, 10, 14],
+    bass: [45, null, 45, null, 50, null, 45, 52, 45, null, 57, null, 52, null, 50, null],
+    lead: [69, null, 72, null, 74, null, 76, null, 74, null, 72, null, 69, null, 67, null],
+    chords: [[57, 61, 64], [55, 59, 62], [50, 54, 57], [52, 57, 61]]
+  },
+  rhythm: {
+    bpm: 138,
+    kick: [0, 3, 6, 8, 11, 14],
+    snare: [4, 12],
+    hat: [1, 2, 5, 6, 7, 9, 10, 13, 14, 15],
+    bass: [45, null, 45, 48, 52, null, 45, 48, 45, null, 45, 53, 48, null, 47, 43],
+    lead: [74, null, 81, null, 79, 77, null, 74, 86, null, 84, null, 81, 79, null, 77],
+    chords: [[57, 60, 64], [55, 59, 62], [60, 64, 67], [52, 57, 60]]
+  },
+  typing: {
+    bpm: 118,
+    kick: [0, 8],
+    snare: [4, 12],
+    hat: [2, 6, 10, 14],
+    bass: [48, null, 48, null, 55, null, 52, null, 48, null, 48, null, 57, null, 55, null],
+    lead: [72, null, 74, null, 76, null, 79, null, 76, null, 74, null, 72, null, 69, null],
+    chords: [[60, 64, 67], [57, 60, 64], [55, 59, 62], [60, 64, 67]]
+  },
+  echo: {
+    bpm: 128,
+    kick: [0, 5, 8, 11, 14],
+    snare: [4, 12],
+    hat: [1, 3, 5, 7, 9, 11, 13, 15],
+    bass: [45, null, 45, 48, 52, null, 53, null, 45, null, 45, 48, 55, null, 53, null],
+    lead: [79, null, 81, 84, 86, null, 84, null, 81, null, 79, 76, 74, null, 76, null],
+    chords: [[57, 60, 64], [60, 64, 67], [62, 65, 69], [55, 59, 62]]
+  }
+};
+
+const musicState = {
+  enabled: true,
+  currentScene: "menu",
+  schedulerId: null,
+  step: 0,
+  nextStepTime: 0,
+  unlocked: false
+};
+
+const rhythmState = {
+  running: false,
+  paused: false,
+  score: 0,
+  combo: 0,
+  bestCombo: 0,
+  health: 100,
+  maxHealth: 100,
+  baseSpeed: 320,
+  currentSpeed: 320,
+  spawnTimer: 0,
+  elapsed: 0,
+  lastFrameTime: 0,
+  animationFrameId: null,
+  lastLaneIndex: -1,
+  notes: []
+};
+
 const typingPassages = [
   "Neon rain paints the sidewalk while arcade lights pulse against the night.",
   "Fast fingers win the round when every word lands cleanly and without panic.",
   "A tiny browser game can feel surprisingly alive when motion and feedback click together.",
   "Push your rhythm, trust your timing, and let the scoreboard reward steady hands.",
-  "Typing quickly is less about rushing and more about staying smooth through every sentence."
+  "Typing quickly is less about rushing and more about staying smooth through every sentence.",
+  "Every clean run feels louder when your focus beats the timer instead of chasing it.",
+  "Smooth inputs, bright feedback, and one more round can turn a small game into a habit.",
+  "The best arcade runs feel simple at first and savage once the tempo starts climbing."
 ];
 
 const typingState = {
@@ -98,6 +185,23 @@ const typingState = {
   elapsedMs: 0,
   frameId: null,
   lastTextIndex: -1
+};
+
+const echoState = {
+  running: false,
+  paused: false,
+  showing: false,
+  playerTurn: false,
+  sequence: [],
+  playerIndex: 0,
+  round: 0,
+  score: 0,
+  lives: 3,
+  maxLives: 3,
+  streak: 0,
+  tempoMs: 760,
+  baseTempoMs: 760,
+  timeoutIds: []
 };
 
 function showView(viewName) {
@@ -120,10 +224,532 @@ function showView(viewName) {
     pauseTypingClock();
     typingEls.input.blur();
   }
+
+  if (viewName !== "echo") {
+    resetEchoMode();
+  }
+
+  setMusicScene(viewName);
 }
 
 function returnToMenu() {
   showView("menu");
+}
+
+function midiToFrequency(midi) {
+  return 440 * 2 ** ((midi - 69) / 12);
+}
+
+function getArcadeAudioContext() {
+  if (arcadeAudioContext) {
+    return arcadeAudioContext;
+  }
+
+  const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+
+  if (!AudioContextCtor) {
+    musicButtonEl.disabled = true;
+    musicButtonEl.textContent = "Music: N/A";
+    return null;
+  }
+
+  arcadeAudioContext = new AudioContextCtor();
+  arcadeMasterGain = arcadeAudioContext.createGain();
+  arcadeMusicGain = arcadeAudioContext.createGain();
+  arcadeSfxGain = arcadeAudioContext.createGain();
+
+  const compressor = arcadeAudioContext.createDynamicsCompressor();
+  compressor.threshold.setValueAtTime(-18, arcadeAudioContext.currentTime);
+  compressor.knee.setValueAtTime(20, arcadeAudioContext.currentTime);
+  compressor.ratio.setValueAtTime(9, arcadeAudioContext.currentTime);
+
+  arcadeMasterGain.gain.setValueAtTime(0.9, arcadeAudioContext.currentTime);
+  arcadeMusicGain.gain.setValueAtTime(0.0001, arcadeAudioContext.currentTime);
+  arcadeSfxGain.gain.setValueAtTime(0.55, arcadeAudioContext.currentTime);
+
+  arcadeMusicGain.connect(compressor);
+  arcadeSfxGain.connect(compressor);
+  compressor.connect(arcadeMasterGain);
+  arcadeMasterGain.connect(arcadeAudioContext.destination);
+
+  return arcadeAudioContext;
+}
+
+function getNoiseBuffer() {
+  const audioContext = getArcadeAudioContext();
+
+  if (!audioContext) {
+    return null;
+  }
+
+  if (arcadeNoiseBuffer) {
+    return arcadeNoiseBuffer;
+  }
+
+  const buffer = audioContext.createBuffer(1, audioContext.sampleRate, audioContext.sampleRate);
+  const data = buffer.getChannelData(0);
+
+  for (let index = 0; index < data.length; index += 1) {
+    data[index] = Math.random() * 2 - 1;
+  }
+
+  arcadeNoiseBuffer = buffer;
+  return arcadeNoiseBuffer;
+}
+
+function updateMusicButton() {
+  musicButtonEl.dataset.enabled = String(musicState.enabled);
+  musicButtonEl.textContent = musicState.enabled ? "Music: On" : "Music: Off";
+  musicButtonEl.setAttribute("aria-pressed", String(musicState.enabled));
+}
+
+function resumeArcadeAudio() {
+  const audioContext = getArcadeAudioContext();
+
+  if (!audioContext) {
+    return;
+  }
+
+  if (audioContext.state === "suspended") {
+    audioContext.resume();
+  }
+
+  musicState.unlocked = true;
+
+  if (musicState.enabled && musicState.schedulerId === null) {
+    restartMusicLoop();
+  }
+}
+
+function stopMusicLoop(fadeOut = true) {
+  if (musicState.schedulerId !== null) {
+    clearInterval(musicState.schedulerId);
+    musicState.schedulerId = null;
+  }
+
+  if (!fadeOut || !arcadeAudioContext || !arcadeMusicGain) {
+    return;
+  }
+
+  const now = arcadeAudioContext.currentTime;
+  arcadeMusicGain.gain.cancelScheduledValues(now);
+  arcadeMusicGain.gain.setValueAtTime(Math.max(arcadeMusicGain.gain.value, 0.0001), now);
+  arcadeMusicGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+}
+
+function restartMusicLoop() {
+  const audioContext = getArcadeAudioContext();
+
+  if (!audioContext || audioContext.state === "suspended" || !musicState.enabled) {
+    return;
+  }
+
+  stopMusicLoop(false);
+  musicState.step = 0;
+  musicState.nextStepTime = audioContext.currentTime + 0.06;
+
+  const now = audioContext.currentTime;
+  arcadeMusicGain.gain.cancelScheduledValues(now);
+  arcadeMusicGain.gain.setValueAtTime(Math.max(arcadeMusicGain.gain.value, 0.0001), now);
+  arcadeMusicGain.gain.exponentialRampToValueAtTime(0.18, now + 0.18);
+
+  musicState.schedulerId = window.setInterval(scheduleMusicLoop, 80);
+}
+
+function setMusicEnabled(enabled) {
+  musicState.enabled = enabled;
+  updateMusicButton();
+
+  if (!enabled) {
+    stopMusicLoop(true);
+    return;
+  }
+
+  resumeArcadeAudio();
+  restartMusicLoop();
+}
+
+function setMusicScene(sceneName) {
+  const nextScene = musicScenes[sceneName] ? sceneName : "menu";
+
+  if (musicState.currentScene === nextScene) {
+    return;
+  }
+
+  musicState.currentScene = nextScene;
+
+  if (musicState.enabled && musicState.unlocked) {
+    restartMusicLoop();
+  }
+}
+
+function scheduleOscillatorTone({
+  frequency,
+  time,
+  duration,
+  type = "sine",
+  gainAmount = 0.05,
+  attack = 0.01,
+  release = duration,
+  pitchTo = null,
+  destination = arcadeMusicGain,
+  filterType = null,
+  filterFrequency = null,
+  detune = 0
+}) {
+  const audioContext = getArcadeAudioContext();
+
+  if (!audioContext || !destination) {
+    return;
+  }
+
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, time);
+  oscillator.detune.setValueAtTime(detune, time);
+
+  if (pitchTo && pitchTo > 0 && pitchTo !== frequency) {
+    oscillator.frequency.exponentialRampToValueAtTime(pitchTo, time + duration);
+  }
+
+  gain.gain.setValueAtTime(0.0001, time);
+  gain.gain.exponentialRampToValueAtTime(gainAmount, time + attack);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + release);
+
+  if (filterType && filterFrequency) {
+    const filter = audioContext.createBiquadFilter();
+    filter.type = filterType;
+    filter.frequency.setValueAtTime(filterFrequency, time);
+    oscillator.connect(filter);
+    filter.connect(gain);
+  } else {
+    oscillator.connect(gain);
+  }
+
+  gain.connect(destination);
+  oscillator.start(time);
+  oscillator.stop(time + duration + 0.04);
+}
+
+function scheduleNoiseHit({
+  time,
+  duration = 0.12,
+  gainAmount = 0.05,
+  filterType = "highpass",
+  filterFrequency = 1600,
+  destination = arcadeMusicGain
+}) {
+  const audioContext = getArcadeAudioContext();
+  const noiseBuffer = getNoiseBuffer();
+
+  if (!audioContext || !noiseBuffer || !destination) {
+    return;
+  }
+
+  const noise = audioContext.createBufferSource();
+  const filter = audioContext.createBiquadFilter();
+  const gain = audioContext.createGain();
+
+  noise.buffer = noiseBuffer;
+  filter.type = filterType;
+  filter.frequency.setValueAtTime(filterFrequency, time);
+
+  gain.gain.setValueAtTime(0.0001, time);
+  gain.gain.exponentialRampToValueAtTime(gainAmount, time + 0.004);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+
+  noise.connect(filter);
+  filter.connect(gain);
+  gain.connect(destination);
+
+  noise.start(time);
+  noise.stop(time + duration + 0.03);
+}
+
+function scheduleKick(time, strength = 1) {
+  scheduleOscillatorTone({
+    frequency: 150,
+    pitchTo: 42,
+    time,
+    duration: 0.18,
+    release: 0.18,
+    gainAmount: 0.17 * strength,
+    type: "sine",
+    destination: arcadeMusicGain
+  });
+}
+
+function scheduleSnare(time, strength = 1) {
+  scheduleNoiseHit({
+    time,
+    duration: 0.12,
+    gainAmount: 0.075 * strength,
+    filterType: "highpass",
+    filterFrequency: 1700,
+    destination: arcadeMusicGain
+  });
+
+  scheduleOscillatorTone({
+    frequency: 220,
+    pitchTo: 170,
+    time,
+    duration: 0.08,
+    release: 0.08,
+    gainAmount: 0.04 * strength,
+    type: "triangle",
+    destination: arcadeMusicGain
+  });
+}
+
+function scheduleHat(time, strength = 1) {
+  scheduleNoiseHit({
+    time,
+    duration: 0.045,
+    gainAmount: 0.03 * strength,
+    filterType: "highpass",
+    filterFrequency: 5000,
+    destination: arcadeMusicGain
+  });
+}
+
+function scheduleBassNote(midi, time, duration) {
+  scheduleOscillatorTone({
+    frequency: midiToFrequency(midi),
+    time,
+    duration,
+    release: duration,
+    gainAmount: 0.052,
+    type: "sawtooth",
+    filterType: "lowpass",
+    filterFrequency: 460,
+    destination: arcadeMusicGain
+  });
+}
+
+function scheduleLeadNote(midi, time, duration) {
+  scheduleOscillatorTone({
+    frequency: midiToFrequency(midi),
+    pitchTo: midiToFrequency(midi + 0.4),
+    time,
+    duration,
+    release: duration,
+    gainAmount: 0.026,
+    type: "triangle",
+    filterType: "lowpass",
+    filterFrequency: 1800,
+    destination: arcadeMusicGain
+  });
+}
+
+function schedulePadChord(chord, time, duration) {
+  chord.forEach((midi, index) => {
+    scheduleOscillatorTone({
+      frequency: midiToFrequency(midi),
+      time,
+      duration,
+      attack: 0.04,
+      release: duration,
+      gainAmount: 0.014,
+      type: index === 0 ? "sine" : "triangle",
+      filterType: "lowpass",
+      filterFrequency: 1200,
+      detune: index === 1 ? 4 : index === 2 ? -4 : 0,
+      destination: arcadeMusicGain
+    });
+  });
+}
+
+function scheduleSceneStep(scene, step, time, stepDuration) {
+  if (scene.kick.includes(step)) {
+    scheduleKick(time, step === 0 || step === 8 ? 1 : 0.88);
+  }
+
+  if (scene.snare.includes(step)) {
+    scheduleSnare(time);
+  }
+
+  if (scene.hat.includes(step)) {
+    scheduleHat(time, step % 4 === 3 ? 0.95 : 0.7);
+  }
+
+  const bassNote = scene.bass[step];
+
+  if (bassNote != null) {
+    scheduleBassNote(bassNote, time, stepDuration * 1.6);
+  }
+
+  const leadNote = scene.lead[step];
+
+  if (leadNote != null) {
+    scheduleLeadNote(leadNote, time, stepDuration * 1.15);
+  }
+
+  if (step % 4 === 0) {
+    const chord = scene.chords[(step / 4) % scene.chords.length];
+    schedulePadChord(chord, time, stepDuration * 3.45);
+  }
+}
+
+function scheduleMusicLoop() {
+  const audioContext = arcadeAudioContext;
+
+  if (!audioContext || audioContext.state === "suspended" || !musicState.enabled) {
+    return;
+  }
+
+  const scene = musicScenes[musicState.currentScene] || musicScenes.menu;
+  const stepDuration = 60 / scene.bpm / 4;
+
+  while (musicState.nextStepTime < audioContext.currentTime + 0.3) {
+    scheduleSceneStep(scene, musicState.step, musicState.nextStepTime, stepDuration);
+    musicState.nextStepTime += stepDuration;
+    musicState.step = (musicState.step + 1) % 16;
+  }
+}
+
+function playImmediateTone(options) {
+  const audioContext = getArcadeAudioContext();
+
+  if (!audioContext || audioContext.state === "suspended") {
+    return;
+  }
+
+  scheduleOscillatorTone({
+    ...options,
+    time: audioContext.currentTime,
+    destination: arcadeSfxGain
+  });
+}
+
+function playImmediateNoise(options) {
+  const audioContext = getArcadeAudioContext();
+
+  if (!audioContext || audioContext.state === "suspended") {
+    return;
+  }
+
+  scheduleNoiseHit({
+    ...options,
+    time: audioContext.currentTime,
+    destination: arcadeSfxGain
+  });
+}
+
+function playRhythmTone(kind) {
+  const toneMap = {
+    perfect: { frequency: 740, pitchTo: 910, type: "triangle", gainAmount: 0.12, duration: 0.24 },
+    great: { frequency: 620, pitchTo: 760, type: "triangle", gainAmount: 0.1, duration: 0.2 },
+    good: { frequency: 520, pitchTo: 620, type: "sine", gainAmount: 0.08, duration: 0.16 },
+    miss: { frequency: 220, pitchTo: 140, type: "sawtooth", gainAmount: 0.07, duration: 0.14 }
+  };
+
+  const config = toneMap[kind] || toneMap.good;
+  playImmediateTone(config);
+
+  if (kind === "miss") {
+    playImmediateNoise({
+      duration: 0.08,
+      gainAmount: 0.035,
+      filterType: "highpass",
+      filterFrequency: 2200
+    });
+  }
+}
+
+function playTypingFinishTone() {
+  playImmediateTone({
+    frequency: 523.25,
+    pitchTo: 659.25,
+    type: "triangle",
+    gainAmount: 0.08,
+    duration: 0.14
+  });
+
+  setTimeout(() => {
+    playImmediateTone({
+      frequency: 783.99,
+      pitchTo: 987.77,
+      type: "triangle",
+      gainAmount: 0.09,
+      duration: 0.18
+    });
+  }, 90);
+}
+
+function playEchoPadTone(padIndex, accent = "default") {
+  const pad = echoPadConfig[padIndex];
+
+  if (!pad) {
+    return;
+  }
+
+  const toneScale = accent === "preview" ? 0.8 : accent === "wrong" ? 0.6 : 1;
+  playImmediateTone({
+    frequency: pad.tone,
+    pitchTo: accent === "wrong" ? pad.tone * 0.82 : pad.tone * 1.08,
+    type: accent === "preview" ? "triangle" : "sawtooth",
+    gainAmount: 0.06 * toneScale,
+    duration: accent === "preview" ? 0.16 : 0.22
+  });
+}
+
+function playUiConfirmTone() {
+  playImmediateTone({
+    frequency: 392,
+    pitchTo: 523.25,
+    type: "triangle",
+    gainAmount: 0.06,
+    duration: 0.12
+  });
+
+  setTimeout(() => {
+    playImmediateTone({
+      frequency: 523.25,
+      pitchTo: 659.25,
+      type: "triangle",
+      gainAmount: 0.08,
+      duration: 0.18
+    });
+  }, 80);
+}
+
+function playUiFailTone() {
+  playImmediateTone({
+    frequency: 246.94,
+    pitchTo: 164.81,
+    type: "sawtooth",
+    gainAmount: 0.06,
+    duration: 0.14
+  });
+
+  playImmediateNoise({
+    duration: 0.08,
+    gainAmount: 0.03,
+    filterType: "highpass",
+    filterFrequency: 1800
+  });
+}
+
+function playGameOverTone() {
+  playImmediateTone({
+    frequency: 329.63,
+    pitchTo: 220,
+    type: "triangle",
+    gainAmount: 0.06,
+    duration: 0.16
+  });
+
+  setTimeout(() => {
+    playImmediateTone({
+      frequency: 220,
+      pitchTo: 146.83,
+      type: "triangle",
+      gainAmount: 0.065,
+      duration: 0.22
+    });
+  }, 120);
 }
 
 function buildRhythmBoard() {
@@ -148,6 +774,31 @@ function buildRhythmBoard() {
   });
 }
 
+function buildEchoBoard() {
+  echoPadConfig.forEach((pad, padIndex) => {
+    const padButton = document.createElement("button");
+    padButton.type = "button";
+    padButton.className = "echo-pad";
+    padButton.dataset.padIndex = String(padIndex);
+    padButton.style.setProperty("--pad-color", pad.color);
+    padButton.innerHTML = `
+      <span class="echo-pad-copy">
+        <span class="echo-pad-label">${pad.label}</span>
+        <span class="echo-pad-subtitle">${pad.subtitle}</span>
+      </span>
+      <span class="echo-pad-key">${pad.keyLabel}</span>
+    `;
+
+    padButton.addEventListener("click", () => {
+      resumeArcadeAudio();
+      handleEchoInput(padIndex);
+    });
+
+    echoEls.padGrid.appendChild(padButton);
+    echoPadEls.push(padButton);
+  });
+}
+
 function getRhythmHitLineY() {
   return rhythmEls.game.clientHeight * RHYTHM_HIT_LINE_RATIO;
 }
@@ -157,6 +808,15 @@ function updateRhythmHud() {
   rhythmEls.combo.textContent = String(rhythmState.combo);
   rhythmEls.bestCombo.textContent = String(rhythmState.bestCombo);
   rhythmEls.speed.textContent = `${(rhythmState.currentSpeed / rhythmState.baseSpeed).toFixed(1)}x`;
+  rhythmEls.shield.textContent = `${Math.round(rhythmState.health)}%`;
+
+  if (rhythmState.health > 55) {
+    rhythmEls.shield.style.color = "";
+  } else if (rhythmState.health > 25) {
+    rhythmEls.shield.style.color = "#ffd36b";
+  } else {
+    rhythmEls.shield.style.color = "#ff8ea8";
+  }
 }
 
 function setRhythmStatus(title, detail, accent = "") {
@@ -180,6 +840,10 @@ function flashRhythmLane(laneIndex) {
   const laneEl = rhythmLaneEls[laneIndex];
   const laneKeyEl = rhythmLaneKeyEls[laneIndex];
 
+  if (!laneEl || !laneKeyEl) {
+    return;
+  }
+
   clearTimeout(rhythmLaneFlashTimers[laneIndex]);
   laneEl.classList.add("active");
   laneKeyEl.classList.add("active");
@@ -202,67 +866,6 @@ function pulseElement(element, className, duration = 260) {
   setTimeout(() => {
     element.classList.remove(className);
   }, duration);
-}
-
-function getRhythmAudioContext() {
-  if (rhythmAudioContext) {
-    if (rhythmAudioContext.state === "suspended") {
-      rhythmAudioContext.resume();
-    }
-    return rhythmAudioContext;
-  }
-
-  const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
-
-  if (!AudioContextCtor) {
-    return null;
-  }
-
-  rhythmAudioContext = new AudioContextCtor();
-
-  if (rhythmAudioContext.state === "suspended") {
-    rhythmAudioContext.resume();
-  }
-
-  return rhythmAudioContext;
-}
-
-function playRhythmTone(kind) {
-  const audioContext = getRhythmAudioContext();
-
-  if (!audioContext) {
-    return;
-  }
-
-  const oscillator = audioContext.createOscillator();
-  const gain = audioContext.createGain();
-  const now = audioContext.currentTime;
-
-  const toneMap = {
-    perfect: { frequency: 740, type: "triangle", gain: 0.085, decay: 0.22 },
-    great: { frequency: 620, type: "triangle", gain: 0.07, decay: 0.18 },
-    good: { frequency: 520, type: "sine", gain: 0.055, decay: 0.14 },
-    miss: { frequency: 210, type: "sawtooth", gain: 0.04, decay: 0.12 }
-  };
-
-  const config = toneMap[kind] || toneMap.good;
-
-  oscillator.type = config.type;
-  oscillator.frequency.setValueAtTime(config.frequency, now);
-  oscillator.frequency.exponentialRampToValueAtTime(
-    Math.max(90, config.frequency * (kind === "miss" ? 0.72 : 1.24)),
-    now + config.decay
-  );
-
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(config.gain, now + 0.01);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + config.decay);
-
-  oscillator.connect(gain);
-  gain.connect(audioContext.destination);
-
-  oscillator.start(now);
-  oscillator.stop(now + config.decay + 0.03);
 }
 
 function spawnRhythmBurst(laneIndex, kind) {
@@ -289,9 +892,13 @@ function triggerRhythmImpact(kind, laneIndex) {
   pulseElement(rhythmEls.game, boardImpactClass, 320);
   pulseElement(rhythmEls.feedback, "impact-text", 260);
   pulseElement(rhythmEls.score.closest(".stat-card"), "impact-card", 280);
-  pulseElement(rhythmLaneEls[laneIndex], "impact", 240);
-  pulseElement(rhythmLaneKeyEls[laneIndex], "impact", 240);
-  spawnRhythmBurst(laneIndex, kind);
+
+  if (typeof laneIndex === "number") {
+    pulseElement(rhythmLaneEls[laneIndex], "impact", 240);
+    pulseElement(rhythmLaneKeyEls[laneIndex], "impact", 240);
+    spawnRhythmBurst(laneIndex, kind);
+  }
+
   playRhythmTone(kind);
 
   if (navigator.vibrate) {
@@ -327,8 +934,15 @@ function positionRhythmNote(note) {
   note.element.style.transform = `translate3d(-50%, ${note.y}px, 0)`;
 }
 
-function spawnRhythmNote() {
-  const laneIndex = Math.floor(Math.random() * laneConfig.length);
+function spawnRhythmNote(forcedLaneIndex) {
+  let laneIndex = typeof forcedLaneIndex === "number" ? forcedLaneIndex : Math.floor(Math.random() * laneConfig.length);
+
+  if (typeof forcedLaneIndex !== "number" && laneIndex === rhythmState.lastLaneIndex && laneConfig.length > 1 && Math.random() < 0.55) {
+    laneIndex = (laneIndex + 1 + Math.floor(Math.random() * (laneConfig.length - 1))) % laneConfig.length;
+  }
+
+  rhythmState.lastLaneIndex = laneIndex;
+
   const lane = laneConfig[laneIndex];
   const noteEl = document.createElement("div");
 
@@ -347,6 +961,7 @@ function spawnRhythmNote() {
 
   positionRhythmNote(note);
   rhythmState.notes.push(note);
+  return note;
 }
 
 function removeRhythmNoteAt(noteIndex) {
@@ -359,11 +974,52 @@ function removeRhythmNoteAt(noteIndex) {
   return note;
 }
 
-function registerRhythmMiss(note) {
+function finishRhythmGame(reason) {
+  rhythmState.running = false;
+  rhythmState.paused = false;
+  stopRhythmLoop();
+  clearRhythmNotes();
+  setRhythmStatus("RUN OVER", reason, "#ff8ea8");
+  showRhythmOverlay(
+    "Run Over",
+    `Score ${rhythmState.score}. Best combo ${rhythmState.bestCombo}. Press SPACE to launch another run.`
+  );
+  playGameOverTone();
+}
+
+function applyRhythmPenalty(reason, laneIndex, message) {
+  const penaltyMap = { slip: 34, empty: 18, early: 24 };
+  const feedbackMap = {
+    slip: { title: "MISS", accent: "#ff8ea8" },
+    empty: { title: "WHIFF", accent: "#f7b0ff" },
+    early: { title: "TOO SOON", accent: "#ffb347" }
+  };
+  const detailMap = {
+    slip: "A note slipped past the line.",
+    empty: "That lane was empty.",
+    early: "The note was not close enough yet."
+  };
+
+  const penalty = penaltyMap[reason] || 20;
+  const feedback = feedbackMap[reason] || feedbackMap.empty;
+
   rhythmState.combo = 0;
+  rhythmState.health = Math.max(0, rhythmState.health - penalty);
   updateRhythmHud();
-  flashRhythmJudgement("MISS", `${note.key} slipped by. No lives to lose, just catch the next beat.`, "#ff9cc0");
-  triggerRhythmImpact("miss", note.laneIndex);
+  flashRhythmJudgement(
+    feedback.title,
+    `${message || detailMap[reason]} Shield at ${Math.round(rhythmState.health)}%.`,
+    feedback.accent
+  );
+  triggerRhythmImpact("miss", laneIndex);
+
+  if (rhythmState.health <= 0) {
+    finishRhythmGame("Wrong reads finally broke the shield. Stay cleaner on the next run.");
+  }
+}
+
+function registerRhythmMiss(note) {
+  applyRhythmPenalty("slip", note.laneIndex, `${note.key} got through the line.`);
 }
 
 function handleRhythmMiss(noteIndex) {
@@ -382,17 +1038,20 @@ function scoreRhythmHit(noteIndex, distance) {
   }
 
   let points = 1;
+  let heal = 2;
   let title = "GOOD";
   let accent = "#fff6b4";
   let impactKind = "good";
 
   if (distance <= RHYTHM_PERFECT_WINDOW) {
     points = 5;
+    heal = 7;
     title = "PERFECT";
     accent = "#7ef9ff";
     impactKind = "perfect";
   } else if (distance <= RHYTHM_GREAT_WINDOW) {
     points = 3;
+    heal = 4;
     title = "GREAT";
     accent = "#9be38e";
     impactKind = "great";
@@ -401,6 +1060,7 @@ function scoreRhythmHit(noteIndex, distance) {
   rhythmState.score += points + Math.floor(rhythmState.combo / 6);
   rhythmState.combo += 1;
   rhythmState.bestCombo = Math.max(rhythmState.bestCombo, rhythmState.combo);
+  rhythmState.health = Math.min(rhythmState.maxHealth, rhythmState.health + heal);
   updateRhythmHud();
 
   flashRhythmJudgement(title, `${rhythmState.combo} combo alive in the ${note.key} lane.`, accent);
@@ -437,13 +1097,15 @@ function startRhythmGame() {
   rhythmState.score = 0;
   rhythmState.combo = 0;
   rhythmState.bestCombo = 0;
+  rhythmState.health = rhythmState.maxHealth;
   rhythmState.currentSpeed = rhythmState.baseSpeed;
   rhythmState.spawnTimer = 0;
   rhythmState.elapsed = 0;
   rhythmState.lastFrameTime = 0;
+  rhythmState.lastLaneIndex = -1;
 
   updateRhythmHud();
-  setRhythmStatus("GO", "Easy mode is live. Float through the neon lanes and keep the combo climbing.", "#7ef9ff");
+  setRhythmStatus("GO", "Misses and wrong taps now hit your shield. Play sharp and protect the run.", "#7ef9ff");
   spawnRhythmNote();
   rhythmState.animationFrameId = requestAnimationFrame(runRhythmLoop);
 }
@@ -464,7 +1126,7 @@ function toggleRhythmPause() {
 
   hideRhythmOverlay();
   rhythmState.lastFrameTime = 0;
-  setRhythmStatus("GO", "Back in motion. Keep the streak alive.", "#7ef9ff");
+  setRhythmStatus("GO", "Back in motion. Keep the shield intact.", "#7ef9ff");
   rhythmState.animationFrameId = requestAnimationFrame(runRhythmLoop);
 }
 
@@ -476,13 +1138,15 @@ function resetRhythmMode() {
   rhythmState.score = 0;
   rhythmState.combo = 0;
   rhythmState.bestCombo = 0;
+  rhythmState.health = rhythmState.maxHealth;
   rhythmState.currentSpeed = rhythmState.baseSpeed;
   rhythmState.spawnTimer = 0;
   rhythmState.elapsed = 0;
   rhythmState.lastFrameTime = 0;
+  rhythmState.lastLaneIndex = -1;
   updateRhythmHud();
-  setRhythmStatus("Ready", "W, A, S, and D only. No lives, no pressure, just flow.", "");
-  showRhythmOverlay("Pulse Grid", "Press SPACE to launch an endless easy run.");
+  setRhythmStatus("Ready", "W, A, S, and D only. Misses burn shield, perfect hits can patch it back up.", "");
+  showRhythmOverlay("Pulse Grid", "Press SPACE to launch a run. Wrong taps and missed notes now end bad runs.");
 }
 
 function runRhythmLoop(timestamp) {
@@ -499,9 +1163,9 @@ function runRhythmLoop(timestamp) {
   rhythmState.lastFrameTime = timestamp;
   rhythmState.elapsed += deltaTime;
   rhythmState.spawnTimer += deltaTime * 1000;
-  rhythmState.currentSpeed = rhythmState.baseSpeed + rhythmState.elapsed * 18;
+  rhythmState.currentSpeed = rhythmState.baseSpeed + rhythmState.elapsed * 24;
 
-  const spawnInterval = Math.max(540, 980 - rhythmState.elapsed * 18);
+  const spawnInterval = Math.max(360, 900 - rhythmState.elapsed * 28);
 
   while (rhythmState.spawnTimer >= spawnInterval) {
     spawnRhythmNote();
@@ -673,7 +1337,12 @@ function finishTypingRound() {
   const accuracy = typedValue.length > 0 ? Math.round((correctChars / typedValue.length) * 100) : 100;
 
   typingEls.input.readOnly = true;
-  setTypingStatus("Finished", `You cleared the text in ${(typingState.elapsedMs / 1000).toFixed(1)}s at ${wpm} WPM with ${accuracy}% accuracy.`, "#7ef9ff");
+  setTypingStatus(
+    "Finished",
+    `You cleared the text in ${(typingState.elapsedMs / 1000).toFixed(1)}s at ${wpm} WPM with ${accuracy}% accuracy.`,
+    "#7ef9ff"
+  );
+  playTypingFinishTone();
 }
 
 function handleTypingInput() {
@@ -698,7 +1367,296 @@ function handleTypingInput() {
   }
 }
 
+function updateEchoHud() {
+  echoEls.round.textContent = String(echoState.round);
+  echoEls.score.textContent = String(echoState.score);
+  echoEls.lives.textContent = String(echoState.lives);
+  echoEls.streak.textContent = String(echoState.streak);
+  echoEls.pace.textContent = `${(echoState.baseTempoMs / echoState.tempoMs).toFixed(1)}x`;
+
+  if (echoState.lives > 1) {
+    echoEls.lives.style.color = "";
+  } else {
+    echoEls.lives.style.color = "#ff8ea8";
+  }
+}
+
+function setEchoStatus(title, detail, accent = "") {
+  echoEls.feedback.textContent = title;
+  echoEls.feedback.style.color = accent;
+  echoEls.hint.textContent = detail;
+}
+
+function showEchoOverlay(title, text) {
+  echoEls.overlay.classList.remove("hidden");
+  echoEls.overlayTitle.textContent = title;
+  echoEls.overlayText.textContent = text;
+}
+
+function hideEchoOverlay() {
+  echoEls.overlay.classList.add("hidden");
+}
+
+function clearEchoTimers() {
+  echoState.timeoutIds.forEach((timeoutId) => clearTimeout(timeoutId));
+  echoState.timeoutIds = [];
+}
+
+function flashEchoPad(padIndex, toneAccent = "default", className = "active", duration = 220) {
+  const padEl = echoPadEls[padIndex];
+
+  if (!padEl) {
+    return;
+  }
+
+  clearTimeout(echoPadTimers[padIndex]);
+  padEl.classList.remove("wrong", "success");
+  padEl.classList.add(className);
+
+  if (toneAccent) {
+    playEchoPadTone(padIndex, toneAccent);
+  }
+
+  echoPadTimers[padIndex] = setTimeout(() => {
+    padEl.classList.remove(className);
+  }, duration);
+}
+
+function markEchoPad(padIndex, className, duration = 280) {
+  const padEl = echoPadEls[padIndex];
+
+  if (!padEl) {
+    return;
+  }
+
+  padEl.classList.remove("wrong", "success");
+  padEl.classList.add(className);
+
+  setTimeout(() => {
+    padEl.classList.remove(className);
+  }, duration);
+}
+
+function chooseEchoPad() {
+  let nextPadIndex = Math.floor(Math.random() * echoPadConfig.length);
+  const lastPad = echoState.sequence[echoState.sequence.length - 1];
+
+  if (echoPadConfig.length > 1 && nextPadIndex === lastPad && Math.random() < 0.6) {
+    nextPadIndex = (nextPadIndex + 1 + Math.floor(Math.random() * (echoPadConfig.length - 1))) % echoPadConfig.length;
+  }
+
+  return nextPadIndex;
+}
+
+function playEchoSequence(statusTitle, detail, accent = "#ffcf7f") {
+  if (!echoState.running) {
+    return;
+  }
+
+  clearEchoTimers();
+  echoState.showing = true;
+  echoState.playerTurn = false;
+  echoState.playerIndex = 0;
+  setEchoStatus(statusTitle, detail, accent);
+
+  let delay = 360;
+
+  echoState.sequence.forEach((padIndex) => {
+    const timeoutId = setTimeout(() => {
+      flashEchoPad(padIndex, "preview", "active", Math.max(180, echoState.tempoMs * 0.58));
+    }, delay);
+
+    echoState.timeoutIds.push(timeoutId);
+    delay += echoState.tempoMs;
+  });
+
+  const turnTimeoutId = setTimeout(() => {
+    echoState.showing = false;
+    echoState.playerTurn = true;
+    setEchoStatus("Your Turn", `Repeat ${echoState.sequence.length} pulses before the reactor speeds up again.`, "#7ef9ff");
+  }, delay + 20);
+
+  echoState.timeoutIds.push(turnTimeoutId);
+}
+
+function queueNextEchoRound() {
+  if (!echoState.running) {
+    return;
+  }
+
+  echoState.sequence.push(chooseEchoPad());
+  echoState.round = echoState.sequence.length;
+  updateEchoHud();
+  playEchoSequence("Watch", `Round ${echoState.round} is live. Lock in on the glowing pattern.`, "#ffcf7f");
+}
+
+function finishEchoGame(reason) {
+  echoState.running = false;
+  echoState.paused = false;
+  echoState.showing = false;
+  echoState.playerTurn = false;
+  clearEchoTimers();
+  setEchoStatus("REACTOR DOWN", reason, "#ff8ea8");
+  showEchoOverlay(
+    "Reactor Down",
+    `Score ${echoState.score}. You cleared ${Math.max(echoState.round - 1, 0)} full rounds. Press SPACE or Start Reactor to try again.`
+  );
+  pulseElement(echoEls.board, "impact-miss", 320);
+  playGameOverTone();
+}
+
+function startEchoGame() {
+  clearEchoTimers();
+  hideEchoOverlay();
+
+  echoState.running = true;
+  echoState.paused = false;
+  echoState.showing = false;
+  echoState.playerTurn = false;
+  echoState.sequence = [];
+  echoState.playerIndex = 0;
+  echoState.round = 0;
+  echoState.score = 0;
+  echoState.lives = echoState.maxLives;
+  echoState.streak = 0;
+  echoState.tempoMs = echoState.baseTempoMs;
+
+  updateEchoHud();
+  setEchoStatus("SYNCING", "Watch the sequence, then mirror it back one pulse at a time.", "#7ef9ff");
+  queueNextEchoRound();
+}
+
+function toggleEchoPause() {
+  if (!echoState.running) {
+    return;
+  }
+
+  echoState.paused = !echoState.paused;
+
+  if (echoState.paused) {
+    clearEchoTimers();
+    echoState.showing = false;
+    echoState.playerTurn = false;
+    setEchoStatus("PAUSED", "Press P to replay the pattern and jump back in.", "#ffd36b");
+    showEchoOverlay("Paused", "Press P to continue. The current pattern will replay when you return.");
+    return;
+  }
+
+  hideEchoOverlay();
+  playEchoSequence("Watch", "Pattern replaying to bring you back in cleanly.", "#ffcf7f");
+}
+
+function replayEchoSequence(costsLife) {
+  if (!echoState.running || echoState.sequence.length === 0 || echoState.showing) {
+    return;
+  }
+
+  if (costsLife) {
+    if (echoState.lives <= 1) {
+      echoState.lives = 0;
+      updateEchoHud();
+      finishEchoGame("You burned the last life on a replay. The reactor timed out.");
+      return;
+    }
+
+    echoState.lives -= 1;
+    echoState.streak = 0;
+    updateEchoHud();
+  }
+
+  playEchoSequence(
+    "Replay",
+    costsLife ? "Sequence replayed for one life. Breathe, then nail it." : "Pattern replaying. Lock back in.",
+    "#ffcf7f"
+  );
+}
+
+function handleEchoInput(padIndex) {
+  if (!echoState.running || echoState.paused || echoState.showing || !echoState.playerTurn) {
+    return;
+  }
+
+  flashEchoPad(padIndex, "default", "active", Math.max(150, echoState.tempoMs * 0.45));
+
+  const expectedPadIndex = echoState.sequence[echoState.playerIndex];
+
+  if (padIndex !== expectedPadIndex) {
+    echoState.lives -= 1;
+    echoState.streak = 0;
+    updateEchoHud();
+    markEchoPad(padIndex, "wrong", 320);
+    pulseElement(echoEls.board, "impact-miss", 320);
+    playUiFailTone();
+
+    if (echoState.lives <= 0) {
+      finishEchoGame("One wrong pulse too many knocked the reactor out of sync.");
+      return;
+    }
+
+    echoState.tempoMs = Math.min(900, echoState.tempoMs + 24);
+    updateEchoHud();
+    setEchoStatus("STRIKE", `Wrong pad. ${echoState.lives} lives left and the pattern is replaying.`, "#ff8ea8");
+
+    const retryTimeoutId = setTimeout(() => {
+      playEchoSequence("Watch", "Same round again. Follow the glow and answer cleanly.", "#ffcf7f");
+    }, 760);
+
+    echoState.timeoutIds.push(retryTimeoutId);
+    return;
+  }
+
+  markEchoPad(padIndex, "success", 240);
+  pulseElement(echoEls.board, "impact-good", 220);
+  echoState.playerIndex += 1;
+  echoState.score += 12 + echoState.round * 4;
+  echoState.streak += 1;
+  updateEchoHud();
+
+  if (echoState.playerIndex === echoState.sequence.length) {
+    echoState.playerTurn = false;
+    echoState.score += echoState.round * 12;
+    echoState.tempoMs = Math.max(320, echoState.tempoMs - 36);
+    updateEchoHud();
+    setEchoStatus("CLEAR", `Round ${echoState.round} cleared. The reactor is accelerating.`, "#9be38e");
+    playUiConfirmTone();
+
+    const nextRoundTimeoutId = setTimeout(() => {
+      queueNextEchoRound();
+    }, 860);
+
+    echoState.timeoutIds.push(nextRoundTimeoutId);
+    return;
+  }
+
+  const remaining = echoState.sequence.length - echoState.playerIndex;
+  setEchoStatus("LOCKED IN", `${remaining} pulse${remaining === 1 ? "" : "s"} left in this round.`, "#9be38e");
+}
+
+function resetEchoMode() {
+  clearEchoTimers();
+  echoState.running = false;
+  echoState.paused = false;
+  echoState.showing = false;
+  echoState.playerTurn = false;
+  echoState.sequence = [];
+  echoState.playerIndex = 0;
+  echoState.round = 0;
+  echoState.score = 0;
+  echoState.lives = echoState.maxLives;
+  echoState.streak = 0;
+  echoState.tempoMs = echoState.baseTempoMs;
+  updateEchoHud();
+  setEchoStatus("Ready", "Watch the pattern first, then replay it without leaking all three lives.", "");
+  showEchoOverlay(
+    "Echo Reactor",
+    "Press SPACE or Start Reactor to begin. You can replay the sequence, but it costs one life."
+  );
+}
+
+document.addEventListener("pointerdown", resumeArcadeAudio, { passive: true });
 document.addEventListener("keydown", (event) => {
+  resumeArcadeAudio();
+
   if (activeView === "rhythm") {
     if (event.code === "Space") {
       event.preventDefault();
@@ -710,6 +1668,7 @@ document.addEventListener("keydown", (event) => {
     }
 
     if (event.code === "KeyP") {
+      event.preventDefault();
       toggleRhythmPause();
       return;
     }
@@ -721,6 +1680,7 @@ document.addEventListener("keydown", (event) => {
       return;
     }
 
+    event.preventDefault();
     flashRhythmLane(laneIndex);
 
     if (!rhythmState.running || rhythmState.paused) {
@@ -730,40 +1690,151 @@ document.addEventListener("keydown", (event) => {
     const target = findClosestRhythmNote(laneIndex);
 
     if (!target) {
-      rhythmState.combo = 0;
-      updateRhythmHud();
-      flashRhythmJudgement("EMPTY", `${key} lane is clear. Wait for the note.`, "#f7b0ff");
+      applyRhythmPenalty("empty", laneIndex, `${key} was a ghost tap.`);
       return;
     }
 
     if (target.distance > RHYTHM_MISS_WINDOW) {
-      rhythmState.combo = 0;
-      updateRhythmHud();
-      flashRhythmJudgement("TOO SOON", `${key} was not close enough to the line.`, "#ffb347");
+      applyRhythmPenalty("early", laneIndex, `${key} fired too early for the line.`);
       return;
     }
 
     scoreRhythmHit(target.noteIndex, target.distance);
+    return;
+  }
+
+  if (activeView === "echo") {
+    if (event.code === "Space") {
+      event.preventDefault();
+
+      if (!echoState.running) {
+        startEchoGame();
+      }
+      return;
+    }
+
+    if (event.code === "KeyP") {
+      event.preventDefault();
+      toggleEchoPause();
+      return;
+    }
+
+    const padIndex = echoPadConfig.findIndex((pad) => pad.key === event.key);
+
+    if (padIndex !== -1) {
+      event.preventDefault();
+      handleEchoInput(padIndex);
+    }
   }
 });
 
 modeButtons.forEach((button) => {
   button.addEventListener("click", () => {
     const viewName = button.dataset.view;
+    resumeArcadeAudio();
     showView(viewName);
   });
 });
 
 menuButtonEl.addEventListener("click", returnToMenu);
+
+musicButtonEl.addEventListener("click", () => {
+  resumeArcadeAudio();
+  setMusicEnabled(!musicState.enabled);
+});
+
 typingEls.input.addEventListener("input", handleTypingInput);
 typingEls.input.addEventListener("paste", (event) => {
   event.preventDefault();
   setTypingStatus("No Paste", "This mode tracks real typing speed, so pasting is disabled.", "#ffb347");
+  playUiFailTone();
 });
 typingEls.newText.addEventListener("click", () => setupTypingRound(true));
 typingEls.reset.addEventListener("click", () => setupTypingRound(false));
 
+echoEls.start.addEventListener("click", () => {
+  resumeArcadeAudio();
+  startEchoGame();
+});
+
+echoEls.replay.addEventListener("click", () => {
+  resumeArcadeAudio();
+  replayEchoSequence(true);
+});
+
 buildRhythmBoard();
+buildEchoBoard();
+updateMusicButton();
 resetRhythmMode();
+resetEchoMode();
 setupTypingRound(true);
 showView("menu");
+
+window.__arcadeTest = {
+  showView,
+  startRhythmGame,
+  clearRhythmNotes,
+  spawnRhythmNote(laneIndex, y = getRhythmHitLineY()) {
+    const note = spawnRhythmNote(laneIndex);
+    note.y = y;
+    positionRhythmNote(note);
+    return { laneIndex: note.laneIndex, key: note.key };
+  },
+  setRhythmHealth(value) {
+    rhythmState.health = Math.max(0, Math.min(rhythmState.maxHealth, value));
+    updateRhythmHud();
+  },
+  getRhythmState() {
+    return {
+      running: rhythmState.running,
+      paused: rhythmState.paused,
+      score: rhythmState.score,
+      combo: rhythmState.combo,
+      bestCombo: rhythmState.bestCombo,
+      health: rhythmState.health,
+      notes: rhythmState.notes.map((note) => ({
+        laneIndex: note.laneIndex,
+        key: note.key,
+        y: note.y
+      }))
+    };
+  },
+  startEchoGame,
+  setEchoSequence(sequence, options = {}) {
+    clearEchoTimers();
+    echoState.running = true;
+    echoState.paused = false;
+    echoState.showing = false;
+    echoState.playerTurn = true;
+    echoState.sequence = [...sequence];
+    echoState.playerIndex = 0;
+    echoState.round = options.round ?? sequence.length;
+    echoState.score = options.score ?? 0;
+    echoState.lives = options.lives ?? echoState.maxLives;
+    echoState.streak = options.streak ?? 0;
+    echoState.tempoMs = options.tempoMs ?? echoState.baseTempoMs;
+    hideEchoOverlay();
+    updateEchoHud();
+  },
+  getEchoState() {
+    return {
+      running: echoState.running,
+      paused: echoState.paused,
+      showing: echoState.showing,
+      playerTurn: echoState.playerTurn,
+      sequence: [...echoState.sequence],
+      playerIndex: echoState.playerIndex,
+      round: echoState.round,
+      score: echoState.score,
+      lives: echoState.lives,
+      streak: echoState.streak,
+      tempoMs: echoState.tempoMs
+    };
+  },
+  pressEchoPad(index) {
+    handleEchoInput(index);
+  },
+  getTypingText() {
+    return typingState.text;
+  }
+};
