@@ -832,11 +832,13 @@ textarea {
 }
 
 .brawl-enemy-layer,
+.brawl-projectile-layer,
 .brawl-impact-layer {
   position: absolute;
   inset: 0;
 }
 
+.brawl-projectile-layer,
 .brawl-impact-layer {
   pointer-events: none;
 }
@@ -975,6 +977,7 @@ textarea {
   transform: translateX(-50%);
   z-index: 2;
   will-change: transform, left;
+  transition: filter 120ms ease, transform 120ms ease;
 }
 
 .brawl-enemy::before,
@@ -1044,6 +1047,33 @@ textarea {
   box-shadow: 0 0 18px rgba(126, 249, 255, 0.18);
 }
 
+.brawl-enemy.type-striker .brawl-enemy-head {
+  background: linear-gradient(180deg, rgba(255, 216, 94, 0.36), rgba(255, 94, 143, 0.14));
+}
+
+.brawl-enemy.type-hopper .brawl-enemy-head {
+  background: linear-gradient(180deg, rgba(155, 227, 142, 0.36), rgba(126, 249, 255, 0.14));
+}
+
+.brawl-enemy.type-slider .brawl-enemy-head {
+  background: linear-gradient(180deg, rgba(255, 94, 143, 0.34), rgba(255, 216, 94, 0.14));
+}
+
+.brawl-enemy.type-thrower .brawl-enemy-head {
+  background: linear-gradient(180deg, rgba(126, 249, 255, 0.36), rgba(255, 255, 255, 0.08));
+}
+
+.brawl-enemy.type-thrower .brawl-enemy-weapon {
+  width: 24px;
+  height: 24px;
+  top: 82px;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(126, 249, 255, 0.42), rgba(255, 255, 255, 0.08)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent);
+  box-shadow: 0 0 18px rgba(126, 249, 255, 0.26);
+}
+
 .brawl-enemy.side-left .brawl-enemy-weapon {
   right: 2px;
   transform: rotate(-22deg);
@@ -1101,6 +1131,27 @@ textarea {
   filter: brightness(1.14);
 }
 
+.brawl-enemy.telegraph {
+  filter: brightness(1.22);
+}
+
+.brawl-enemy.telegraph::before,
+.brawl-enemy.telegraph::after {
+  box-shadow: 0 0 22px rgba(255, 255, 255, 0.12);
+}
+
+.brawl-enemy.state-windup {
+  transform: translateX(-50%) scale(1.05);
+}
+
+.brawl-enemy.state-lunge {
+  transform: translateX(-50%) scale(1.1);
+}
+
+.brawl-enemy.state-retreat {
+  filter: saturate(0.82);
+}
+
 .brawl-enemy.defeated {
   animation: hitBurst 320ms ease-out forwards;
 }
@@ -1115,6 +1166,44 @@ textarea {
   box-shadow: 0 0 28px rgba(255, 94, 143, 0.28);
   transform: translate(-50%, -50%);
   animation: hitBurst 320ms ease-out forwards;
+}
+
+.brawl-projectile {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  transform: translate(-50%, -50%) rotate(0deg);
+  background:
+    linear-gradient(135deg, rgba(126, 249, 255, 0.46), rgba(255, 255, 255, 0.08)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 0 26px rgba(126, 249, 255, 0.28);
+  animation: brawlProjectileSpin 360ms linear infinite;
+}
+
+.brawl-projectile::before,
+.brawl-projectile::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.brawl-projectile::after {
+  inset: -4px 10px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(126, 249, 255, 0.26), transparent 72%);
+  border: none;
+  filter: blur(8px);
+}
+
+.brawl-projectile.reflected {
+  background:
+    linear-gradient(135deg, rgba(255, 216, 94, 0.42), rgba(255, 255, 255, 0.08)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent);
+  box-shadow: 0 0 28px rgba(255, 216, 94, 0.28);
 }
 
 .typing-shell {
@@ -1313,6 +1402,15 @@ textarea {
   }
   100% {
     transform: scale(1);
+  }
+}
+
+@keyframes brawlProjectileSpin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
   }
 }
 

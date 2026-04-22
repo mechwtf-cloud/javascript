@@ -248,7 +248,7 @@
         <section class="hero-panel brawl-panel">
           <p class="eyebrow">Brawler Mode</p>
           <h2 class="section-title">Neon Brawl</h2>
-          <p id="brawlInfo" class="headline">Press SPACE to start. Use Left and Right to strike, Up to launch, Down to sweep, and P to pause.</p>
+          <p id="brawlInfo" class="headline">Press SPACE to start. Left and Right counter side rushers and reflect weapons, Up launches jumpers, Down sweeps sliders, and P pauses.</p>
 
           <div class="stats-grid">
             <article class="stat-card">
@@ -288,19 +288,19 @@
           <div class="brawl-move-legend">
             <button class="brawl-move-chip" type="button" data-brawl-move="left">
               <strong>Left</strong>
-              <span>Counter left rush</span>
+              <span>Counter left rush and bat left weapons back</span>
             </button>
             <button class="brawl-move-chip" type="button" data-brawl-move="right">
               <strong>Right</strong>
-              <span>Counter right rush</span>
+              <span>Counter right rush and reflect right weapons</span>
             </button>
             <button class="brawl-move-chip" type="button" data-brawl-move="up">
               <strong>Up</strong>
-              <span>Launch high attackers</span>
+              <span>Launch jumpers and high dives</span>
             </button>
             <button class="brawl-move-chip" type="button" data-brawl-move="down">
               <strong>Down</strong>
-              <span>Sweep low attackers</span>
+              <span>Sweep sliders before they cut your legs</span>
             </button>
           </div>
 
@@ -309,6 +309,7 @@
             <div class="brawl-skyline brawl-skyline-front"></div>
             <div class="brawl-floor"></div>
             <div id="brawlEnemyLayer" class="brawl-enemy-layer"></div>
+            <div id="brawlProjectileLayer" class="brawl-projectile-layer"></div>
             <div id="brawlImpactLayer" class="brawl-impact-layer"></div>
             <div id="brawlPlayer" class="brawl-player idle" aria-hidden="true">
               <div class="brawl-player-shadow"></div>
@@ -324,7 +325,7 @@
             <div id="brawlOverlay" class="board-overlay">
               <div>
                 <h3 id="brawlOverlayTitle">Neon Brawl</h3>
-                <p id="brawlOverlayText">Press SPACE or Start Fight to jump in. Read the side and height, then throw the right counter.</p>
+                <p id="brawlOverlayText">Press SPACE or Start Fight to jump in. Read the side, height, and weapon tell, then answer with the right counter.</p>
               </div>
             </div>
           </div>
