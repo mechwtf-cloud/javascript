@@ -95,6 +95,7 @@ const brawlEls = {
   hint: document.getElementById("brawlHint"),
   arena: document.getElementById("brawlArena"),
   enemyLayer: document.getElementById("brawlEnemyLayer"),
+  projectileLayer: document.getElementById("brawlProjectileLayer"),
   impactLayer: document.getElementById("brawlImpactLayer"),
   player: document.getElementById("brawlPlayer"),
   overlay: document.getElementById("brawlOverlay"),
@@ -251,8 +252,66 @@ const brawlState = {
   moveTimerId: null,
   currentMove: "idle",
   dangerMultiplier: 1,
+  invulnerabilityTimer: 0,
   lastSpawnSide: "right",
-  enemies: []
+  enemies: [],
+  projectiles: []
+};
+
+const brawlEnemyCatalog = {
+  striker: {
+    height: "mid",
+    category: "melee",
+    approachSpeed: [250, 320],
+    engageDistance: 154,
+    windupMs: 180,
+    lungeSpeed: 700,
+    score: 30,
+    accent: "#ffd36b",
+    tone: "punch",
+    title: "COUNTER",
+    detail: "Side rusher stuffed clean."
+  },
+  hopper: {
+    height: "high",
+    category: "melee",
+    approachSpeed: [230, 290],
+    engageDistance: 166,
+    windupMs: 220,
+    lungeSpeed: 640,
+    score: 36,
+    accent: "#9be38e",
+    tone: "launcher",
+    title: "LAUNCH",
+    detail: "Jump attacker got read early."
+  },
+  slider: {
+    height: "low",
+    category: "melee",
+    approachSpeed: [255, 325],
+    engageDistance: 178,
+    windupMs: 170,
+    lungeSpeed: 720,
+    score: 36,
+    accent: "#ff8ea8",
+    tone: "sweep",
+    title: "SWEEP",
+    detail: "Low slider got folded up."
+  },
+  thrower: {
+    height: "mid",
+    category: "projectile",
+    approachSpeed: [180, 230],
+    engageDistance: 268,
+    windupMs: 320,
+    retreatSpeed: 220,
+    projectileSpeed: 780,
+    score: 44,
+    accent: "#7ef9ff",
+    tone: "reflect",
+    title: "REFLECT",
+    detail: "Weapon sent right back."
+  }
 };
 
 function showView(viewName) {
@@ -812,6 +871,7 @@ function playBrawlTone(kind) {
     punch: { frequency: 261.63, pitchTo: 392, type: "sawtooth", gainAmount: 0.08, duration: 0.11 },
     launcher: { frequency: 392, pitchTo: 659.25, type: "triangle", gainAmount: 0.09, duration: 0.14 },
     sweep: { frequency: 220, pitchTo: 329.63, type: "square", gainAmount: 0.075, duration: 0.12 },
+    reflect: { frequency: 392, pitchTo: 783.99, type: "triangle", gainAmount: 0.095, duration: 0.16 },
     hurt: { frequency: 196, pitchTo: 130.81, type: "sawtooth", gainAmount: 0.07, duration: 0.13 },
     whiff: { frequency: 246.94, pitchTo: 220, type: "triangle", gainAmount: 0.045, duration: 0.08 }
   };
@@ -819,12 +879,12 @@ function playBrawlTone(kind) {
   const config = toneMap[kind] || toneMap.punch;
   playImmediateTone(config);
 
-  if (kind === "punch" || kind === "launcher" || kind === "sweep") {
+  if (kind === "punch" || kind === "launcher" || kind === "sweep" || kind === "reflect") {
     playImmediateNoise({
       duration: 0.05,
       gainAmount: 0.024,
       filterType: "highpass",
-      filterFrequency: kind === "launcher" ? 3600 : 2400
+      filterFrequency: kind === "launcher" ? 3600 : kind === "reflect" ? 4400 : 2400
     });
   }
 
@@ -1783,6 +1843,11 @@ function clearBrawlEnemies() {
   brawlState.enemies = [];
 }
 
+function clearBrawlProjectiles() {
+  brawlState.projectiles.forEach((projectile) => projectile.element.remove());
+  brawlState.projectiles = [];
+}
+
 function getBrawlArenaMetrics() {
   const width = brawlEls.arena.clientWidth || 900;
   const height = brawlEls.arena.clientHeight || 640;
@@ -1820,6 +1885,24 @@ function getBrawlImpactY(height) {
   return arenaHeight * 0.58;
 }
 
+function getBrawlProjectileY(height) {
+  const arenaHeight = brawlEls.arena.clientHeight || 640;
+
+  if (height === "high") {
+    return arenaHeight * 0.36;
+  }
+
+  if (height === "low") {
+    return arenaHeight * 0.72;
+  }
+
+  return arenaHeight * 0.56;
+}
+
+function randomBetween(min, max) {
+  return min + Math.random() * (max - min);
+}
+
 function spawnBrawlImpact(x, y, accent) {
   const impact = document.createElement("div");
   impact.className = "brawl-enemy-hit";
@@ -1840,6 +1923,7 @@ function spawnBrawlImpact(x, y, accent) {
 function setBrawlPlayerMove(moveName, duration = 180) {
   if (brawlState.moveTimerId) {
     clearTimeout(brawlState.moveTimerId);
+    brawlState.moveTimerId = null;
   }
 
   brawlState.currentMove = moveName;
@@ -1855,10 +1939,43 @@ function setBrawlPlayerMove(moveName, duration = 180) {
   }, duration);
 }
 
-function createBrawlEnemy(side, height) {
+function getDefaultBrawlTypeForHeight(height) {
+  if (height === "high") {
+    return "hopper";
+  }
+
+  if (height === "low") {
+    return "slider";
+  }
+
+  return "striker";
+}
+
+function syncBrawlEnemyElement(enemy) {
+  enemy.element.className = [
+    "brawl-enemy",
+    `type-${enemy.type}`,
+    `side-${enemy.side}`,
+    `height-${enemy.height}`,
+    `state-${enemy.state}`,
+    enemy.threatened ? "threat" : "",
+    enemy.state === "windup" ? "telegraph" : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  enemy.element.style.left = `${enemy.x}px`;
+  enemy.element.style.bottom = getBrawlEnemyBottom(enemy.height);
+}
+
+function createBrawlEnemy(side, typeOrHeight = "striker", overrides = {}) {
   const metrics = getBrawlArenaMetrics();
+  const type =
+    brawlEnemyCatalog[typeOrHeight] ? typeOrHeight : getDefaultBrawlTypeForHeight(typeOrHeight || overrides.height);
+  const config = brawlEnemyCatalog[type];
   const enemyEl = document.createElement("div");
-  enemyEl.className = `brawl-enemy side-${side} height-${height}`;
+  const height = overrides.height || config.height;
+  enemyEl.className = `brawl-enemy type-${type} side-${side} height-${height} state-approach`;
   enemyEl.innerHTML = `
     <span class="brawl-enemy-head"></span>
     <span class="brawl-enemy-body"></span>
@@ -1867,44 +1984,110 @@ function createBrawlEnemy(side, height) {
 
   const enemy = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    type,
     side,
     height,
-    x: side === "left" ? -72 : metrics.width + 72,
-    speed: (250 + Math.random() * 45 + brawlState.wave * 16) * brawlState.dangerMultiplier,
+    x: typeof overrides.x === "number" ? overrides.x : side === "left" ? -88 : metrics.width + 88,
+    speed:
+      typeof overrides.speed === "number"
+        ? overrides.speed
+        : randomBetween(config.approachSpeed[0], config.approachSpeed[1]) * brawlState.dangerMultiplier,
+    engageDistance: overrides.engageDistance || config.engageDistance,
+    state: overrides.state || "approach",
+    attackTimer: overrides.attackTimer || 0,
+    projectileId: null,
     threatened: false,
     element: enemyEl
   };
 
-  enemyEl.style.bottom = getBrawlEnemyBottom(height);
-  enemyEl.style.left = `${enemy.x}px`;
-
   brawlEls.enemyLayer.appendChild(enemyEl);
   brawlState.enemies.push(enemy);
+  syncBrawlEnemyElement(enemy);
   return enemy;
 }
 
-function chooseBrawlEnemyHeight() {
+function createBrawlProjectile(sourceEnemy, overrides = {}) {
+  const projectileEl = document.createElement("div");
+  projectileEl.className = `brawl-projectile side-${sourceEnemy.side}`;
+  const direction = sourceEnemy.side === "left" ? 1 : -1;
+  const projectile = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    sourceId: sourceEnemy.id,
+    sourceSide: sourceEnemy.side,
+    height: overrides.height || sourceEnemy.height,
+    x: typeof overrides.x === "number" ? overrides.x : sourceEnemy.x + direction * 30,
+    y: typeof overrides.y === "number" ? overrides.y : getBrawlProjectileY(overrides.height || sourceEnemy.height),
+    velocityX:
+      typeof overrides.velocityX === "number"
+        ? overrides.velocityX
+        : direction * ((brawlEnemyCatalog.thrower.projectileSpeed || 760) * brawlState.dangerMultiplier),
+    reflected: Boolean(overrides.reflected),
+    element: projectileEl
+  };
+
+  projectileEl.style.left = `${projectile.x}px`;
+  projectileEl.style.top = `${projectile.y}px`;
+
+  if (projectile.reflected) {
+    projectileEl.classList.add("reflected");
+  }
+
+  brawlEls.projectileLayer.appendChild(projectileEl);
+  brawlState.projectiles.push(projectile);
+  return projectile;
+}
+
+function chooseBrawlEnemyType() {
   const roll = Math.random();
 
   if (brawlState.wave <= 2) {
-    if (roll < 0.64) {
-      return "mid";
+    if (roll < 0.5) {
+      return "striker";
     }
 
-    return roll < 0.84 ? "high" : "low";
+    if (roll < 0.72) {
+      return "hopper";
+    }
+
+    return roll < 0.92 ? "slider" : "thrower";
   }
 
-  if (roll < 0.45) {
-    return "mid";
+  if (brawlState.wave <= 4) {
+    if (roll < 0.36) {
+      return "striker";
+    }
+
+    if (roll < 0.58) {
+      return "hopper";
+    }
+
+    if (roll < 0.8) {
+      return "slider";
+    }
+
+    return "thrower";
   }
 
-  return roll < 0.73 ? "high" : "low";
+  if (roll < 0.28) {
+    return "striker";
+  }
+
+  if (roll < 0.5) {
+    return "hopper";
+  }
+
+  if (roll < 0.72) {
+    return "slider";
+  }
+
+  return "thrower";
 }
 
-function spawnBrawlEnemy() {
-  const side = brawlState.lastSpawnSide === "left" ? "right" : "left";
+function spawnBrawlEnemy(options = {}) {
+  const side = options.side || (brawlState.lastSpawnSide === "left" ? "right" : "left");
+  const type = options.type || (options.height ? getDefaultBrawlTypeForHeight(options.height) : chooseBrawlEnemyType());
   brawlState.lastSpawnSide = side;
-  return createBrawlEnemy(side, chooseBrawlEnemyHeight());
+  return createBrawlEnemy(side, type, options);
 }
 
 function removeBrawlEnemy(enemy) {
@@ -1917,7 +2100,23 @@ function removeBrawlEnemy(enemy) {
   enemy.element.remove();
 }
 
+function removeBrawlProjectile(projectile) {
+  const projectileIndex = brawlState.projectiles.findIndex((entry) => entry.id === projectile.id);
+
+  if (projectileIndex !== -1) {
+    brawlState.projectiles.splice(projectileIndex, 1);
+  }
+
+  projectile.element.remove();
+}
+
 function getBrawlRequiredMove(enemy) {
+  const config = brawlEnemyCatalog[enemy.type] || brawlEnemyCatalog.striker;
+
+  if (config.category === "projectile") {
+    return enemy.side;
+  }
+
   if (enemy.height === "high") {
     return "up";
   }
@@ -1948,20 +2147,45 @@ function getClosestBrawlEnemy(predicate) {
   return result;
 }
 
-function defeatBrawlEnemy(enemy, moveName) {
-  const moveLabelMap = {
-    left: { title: "COUNTER", detail: "Clean left read.", accent: "#ffcf7f", tone: "punch" },
-    right: { title: "COUNTER", detail: "Clean right read.", accent: "#7ef9ff", tone: "punch" },
-    up: { title: "LAUNCH", detail: "High attacker cracked open.", accent: "#9be38e", tone: "launcher" },
-    down: { title: "SWEEP", detail: "Low attacker clipped hard.", accent: "#ff8ea8", tone: "sweep" }
-  };
-  const label = moveLabelMap[moveName] || moveLabelMap.left;
+function getClosestBrawlProjectile(predicate) {
+  const { centerX } = getBrawlArenaMetrics();
+  let result = null;
+
+  brawlState.projectiles.forEach((projectile) => {
+    const distance = Math.abs(projectile.x - centerX);
+
+    if (!predicate(projectile, distance)) {
+      return;
+    }
+
+    if (!result || distance < result.distance) {
+      result = { projectile, distance };
+    }
+  });
+
+  return result;
+}
+
+function defeatBrawlEnemy(enemy, moveName, method = "counter") {
+  const config = brawlEnemyCatalog[enemy.type] || brawlEnemyCatalog.striker;
+  const label =
+    method === "reflect"
+      ? { title: "REFLECT", detail: "Returned the weapon to sender.", accent: "#7ef9ff", tone: "reflect" }
+      : {
+          title: config.title,
+          detail: config.detail,
+          accent: config.accent,
+          tone: config.tone
+        };
 
   brawlState.combo += 1;
   brawlState.kills += 1;
-  brawlState.wave = 1 + Math.floor(brawlState.kills / 8);
-  brawlState.score += 24 + brawlState.wave * 6 + brawlState.combo * 3;
-  brawlState.health = Math.min(brawlState.maxHealth, brawlState.health + (moveName === "up" ? 4 : 2));
+  brawlState.wave = 1 + Math.floor(brawlState.kills / 7);
+  brawlState.score += config.score + brawlState.wave * 7 + brawlState.combo * 4 + (method === "reflect" ? 10 : 0);
+  brawlState.health = Math.min(
+    brawlState.maxHealth,
+    brawlState.health + (method === "reflect" ? 4 : moveName === "up" ? 4 : 2)
+  );
   updateBrawlHud();
   setBrawlStatus(label.title, `${label.detail} ${brawlState.combo} combo rolling.`, label.accent);
   spawnBrawlImpact(enemy.x, getBrawlImpactY(enemy.height), label.accent);
@@ -1972,8 +2196,13 @@ function defeatBrawlEnemy(enemy, moveName) {
 }
 
 function damageBrawlPlayer(amount, message, accent = "#ff8ea8") {
+  if (brawlState.invulnerabilityTimer > 0 || !brawlState.running) {
+    return;
+  }
+
   brawlState.health = Math.max(0, brawlState.health - amount);
   brawlState.combo = 0;
+  brawlState.invulnerabilityTimer = 0.42;
   updateBrawlHud();
   setBrawlStatus("HIT", `${message} Health at ${Math.round(brawlState.health)}%.`, accent);
   setBrawlPlayerMove("hurt", 220);
@@ -1983,6 +2212,18 @@ function damageBrawlPlayer(amount, message, accent = "#ff8ea8") {
   if (brawlState.health <= 0) {
     finishBrawlGame("The rush finally broke through. Reset and hold the lane tighter next run.");
   }
+}
+
+function reflectBrawlProjectile(projectile) {
+  const direction = projectile.sourceSide === "left" ? -1 : 1;
+  projectile.reflected = true;
+  projectile.velocityX = Math.abs(projectile.velocityX) * 1.18 * direction;
+  projectile.element.classList.add("reflected");
+  brawlState.score += 12 + Math.floor(brawlState.combo / 2);
+  updateBrawlHud();
+  setBrawlStatus("REFLECT", "You slapped the weapon back into the crowd.", "#7ef9ff");
+  spawnBrawlImpact(getBrawlArenaMetrics().centerX + direction * 24, projectile.y, "#7ef9ff");
+  playBrawlTone("reflect");
 }
 
 function performBrawlMove(moveName) {
@@ -1999,23 +2240,48 @@ function performBrawlMove(moveName) {
 
   setBrawlPlayerMove(poseClass, 180);
 
-  const target = getClosestBrawlEnemy((enemy, distance) => {
-    return getBrawlRequiredMove(enemy) === moveName && distance <= 168;
-  });
+  if (moveName === "left" || moveName === "right") {
+    const projectileTarget = getClosestBrawlProjectile((projectile, distance) => {
+      return !projectile.reflected && projectile.sourceSide === moveName && distance <= 108;
+    });
 
-  if (target) {
-    defeatBrawlEnemy(target.enemy, moveName);
+    if (projectileTarget) {
+      reflectBrawlProjectile(projectileTarget.projectile);
+      return;
+    }
+  }
+
+  const targets = brawlState.enemies
+    .map((enemy) => ({ enemy, distance: Math.abs(enemy.x - getBrawlArenaMetrics().centerX) }))
+    .filter(({ enemy, distance }) => getBrawlRequiredMove(enemy) === moveName && distance <= 176)
+    .sort((left, right) => left.distance - right.distance)
+    .slice(0, moveName === "left" || moveName === "right" ? 2 : 1);
+
+  if (targets.length > 0) {
+    targets.forEach(({ enemy }) => {
+      defeatBrawlEnemy(enemy, moveName);
+    });
     return;
   }
 
   const badRead = getClosestBrawlEnemy((enemy, distance) => {
-    return getBrawlRequiredMove(enemy) !== moveName && distance <= 124;
+    return distance <= 124 && enemy.state !== "retreat";
   });
 
-  if (badRead) {
+  if (badRead && getBrawlRequiredMove(badRead.enemy) !== moveName) {
     const enemy = badRead.enemy;
     removeBrawlEnemy(enemy);
     damageBrawlPlayer(14, "Bad read in the pocket. That commit got punished.");
+    return;
+  }
+
+  const badProjectile = getClosestBrawlProjectile((projectile, distance) => {
+    return !projectile.reflected && distance <= 66;
+  });
+
+  if (badProjectile) {
+    removeBrawlProjectile(badProjectile.projectile);
+    damageBrawlPlayer(12, "You guessed wrong and ate the throw.");
     return;
   }
 
@@ -2030,6 +2296,7 @@ function finishBrawlGame(reason) {
   brawlState.paused = false;
   stopBrawlLoop();
   clearBrawlEnemies();
+  clearBrawlProjectiles();
   setBrawlStatus("DOWN", reason, "#ff8ea8");
   showBrawlOverlay(
     "Fight Over",
@@ -2054,10 +2321,16 @@ function startBrawlGame() {
   brawlState.lastFrameTime = 0;
   brawlState.spawnTimer = 0;
   brawlState.dangerMultiplier = 1;
+  brawlState.invulnerabilityTimer = 0;
   brawlState.lastSpawnSide = Math.random() < 0.5 ? "left" : "right";
+  clearBrawlProjectiles();
   setBrawlPlayerMove("idle", 0);
   updateBrawlHud();
-  setBrawlStatus("FIGHT", "Left and right punish side rushers. Up launches high threats. Down sweeps sliders.", "#7ef9ff");
+  setBrawlStatus(
+    "FIGHT",
+    "Punch side rushers, launch jumpers, sweep sliders, and reflect thrown steel back into the pack.",
+    "#7ef9ff"
+  );
   spawnBrawlEnemy();
   brawlState.animationFrameId = requestAnimationFrame(runBrawlLoop);
 }
@@ -2094,14 +2367,20 @@ function resetBrawlMode() {
   brawlState.lastFrameTime = 0;
   brawlState.spawnTimer = 0;
   brawlState.dangerMultiplier = 1;
+  brawlState.invulnerabilityTimer = 0;
   stopBrawlLoop();
   clearBrawlEnemies();
+  clearBrawlProjectiles();
   setBrawlPlayerMove("idle", 0);
   updateBrawlHud();
-  setBrawlStatus("Ready", "Use left and right for side rushers, up for high attacks, and down for low sweeps.", "");
+  setBrawlStatus(
+    "Ready",
+    "Use left and right for side rushers and thrown weapons, up for high dives, and down for low sweeps.",
+    ""
+  );
   showBrawlOverlay(
     "Neon Brawl",
-    "Press SPACE or Start Fight to begin. Read the side and height, then answer with the right counter."
+    "Press SPACE or Start Fight to begin. Read the side, height, and weapon tell, then answer with the right counter."
   );
 }
 
@@ -2120,29 +2399,94 @@ function runBrawlLoop(timestamp) {
   brawlState.lastFrameTime = timestamp;
   brawlState.elapsed += deltaTime;
   brawlState.spawnTimer += deltaTime * 1000;
-  brawlState.dangerMultiplier = 1 + brawlState.elapsed * 0.04 + (brawlState.wave - 1) * 0.16;
+  brawlState.invulnerabilityTimer = Math.max(0, brawlState.invulnerabilityTimer - deltaTime);
+  brawlState.dangerMultiplier = 1 + brawlState.elapsed * 0.05 + (brawlState.wave - 1) * 0.18;
 
-  const maxEnemies = Math.min(4, 2 + Math.floor(brawlState.wave / 3));
-  const spawnInterval = Math.max(280, 930 - brawlState.elapsed * 18 - (brawlState.wave - 1) * 56);
+  const maxEnemies = Math.min(6, 3 + Math.floor(brawlState.wave / 3));
+  const spawnInterval = Math.max(220, 860 - brawlState.elapsed * 24 - (brawlState.wave - 1) * 62);
 
   while (brawlState.spawnTimer >= spawnInterval && brawlState.enemies.length < maxEnemies) {
     spawnBrawlEnemy();
+    if (brawlState.wave >= 3 && Math.random() < 0.2 && brawlState.enemies.length < maxEnemies) {
+      spawnBrawlEnemy({ side: brawlState.lastSpawnSide === "left" ? "right" : "left" });
+    }
     brawlState.spawnTimer -= spawnInterval;
   }
 
   for (let enemyIndex = brawlState.enemies.length - 1; enemyIndex >= 0; enemyIndex -= 1) {
     const enemy = brawlState.enemies[enemyIndex];
+    const config = brawlEnemyCatalog[enemy.type] || brawlEnemyCatalog.striker;
     const direction = enemy.side === "left" ? 1 : -1;
-    enemy.x += direction * enemy.speed * deltaTime;
-    enemy.element.style.left = `${enemy.x}px`;
+
+    if (enemy.state === "approach") {
+      enemy.x += direction * enemy.speed * deltaTime;
+      const engageX = enemy.side === "left" ? metrics.centerX - enemy.engageDistance : metrics.centerX + enemy.engageDistance;
+
+      if ((enemy.side === "left" && enemy.x >= engageX) || (enemy.side === "right" && enemy.x <= engageX)) {
+        enemy.state = "windup";
+        enemy.attackTimer = config.windupMs / 1000;
+      }
+    } else if (enemy.state === "windup") {
+      enemy.attackTimer -= deltaTime;
+
+      if (enemy.attackTimer <= 0) {
+        if (config.category === "projectile") {
+          createBrawlProjectile(enemy);
+          enemy.state = "retreat";
+          enemy.speed = config.retreatSpeed * brawlState.dangerMultiplier;
+        } else {
+          enemy.state = "lunge";
+          enemy.speed = config.lungeSpeed * brawlState.dangerMultiplier;
+        }
+      }
+    } else if (enemy.state === "lunge") {
+      enemy.x += direction * enemy.speed * deltaTime;
+
+      if (Math.abs(enemy.x - metrics.centerX) <= 46) {
+        removeBrawlEnemy(enemy);
+        damageBrawlPlayer(18, "An attacker broke through your center line.");
+        continue;
+      }
+    } else if (enemy.state === "retreat") {
+      enemy.x += (enemy.side === "left" ? -1 : 1) * enemy.speed * deltaTime;
+
+      if ((enemy.side === "left" && enemy.x <= -110) || (enemy.side === "right" && enemy.x >= metrics.width + 110)) {
+        removeBrawlEnemy(enemy);
+        continue;
+      }
+    }
 
     const distance = Math.abs(enemy.x - metrics.centerX);
-    const isThreat = distance <= 168;
-    enemy.element.classList.toggle("threat", isThreat);
+    enemy.threatened = distance <= 176 || enemy.state === "windup" || enemy.state === "lunge";
+    syncBrawlEnemyElement(enemy);
+  }
 
-    if (distance <= 52) {
-      removeBrawlEnemy(enemy);
-      damageBrawlPlayer(18, "An attacker got all the way in.");
+  for (let projectileIndex = brawlState.projectiles.length - 1; projectileIndex >= 0; projectileIndex -= 1) {
+    const projectile = brawlState.projectiles[projectileIndex];
+    projectile.x += projectile.velocityX * deltaTime;
+    projectile.element.style.left = `${projectile.x}px`;
+    projectile.element.style.top = `${projectile.y}px`;
+
+    const distance = Math.abs(projectile.x - metrics.centerX);
+
+    if (!projectile.reflected && distance <= 40) {
+      removeBrawlProjectile(projectile);
+      damageBrawlPlayer(14, "A thrown weapon slipped through your guard.");
+      continue;
+    }
+
+    if (projectile.reflected) {
+      const sourceEnemy = brawlState.enemies.find((enemy) => enemy.id === projectile.sourceId);
+
+      if (sourceEnemy && Math.abs(sourceEnemy.x - projectile.x) <= 48) {
+        removeBrawlProjectile(projectile);
+        defeatBrawlEnemy(sourceEnemy, sourceEnemy.side, "reflect");
+        continue;
+      }
+    }
+
+    if (projectile.x <= -80 || projectile.x >= metrics.width + 80) {
+      removeBrawlProjectile(projectile);
     }
   }
 
@@ -2394,8 +2738,10 @@ window.__arcadeTest = {
   },
   startBrawlGame,
   clearBrawlEnemies,
+  clearBrawlProjectiles,
   stopBrawlLoop,
   setBrawlState(options = {}) {
+    clearBrawlProjectiles();
     brawlState.running = options.running ?? true;
     brawlState.paused = options.paused ?? false;
     brawlState.health = options.health ?? brawlState.maxHealth;
@@ -2405,23 +2751,35 @@ window.__arcadeTest = {
     brawlState.kills = options.kills ?? 0;
     brawlState.elapsed = options.elapsed ?? 0;
     brawlState.dangerMultiplier = options.dangerMultiplier ?? 1;
+    brawlState.invulnerabilityTimer = options.invulnerabilityTimer ?? 0;
     hideBrawlOverlay();
     updateBrawlHud();
   },
   spawnBrawlEnemy(options = {}) {
-    const enemy = createBrawlEnemy(options.side || "left", options.height || "mid");
-    if (typeof options.x === "number") {
-      enemy.x = options.x;
-      enemy.element.style.left = `${enemy.x}px`;
-    }
-    if (typeof options.speed === "number") {
-      enemy.speed = options.speed;
-    }
+    const enemy = createBrawlEnemy(options.side || "left", options.type || options.height || "mid", options);
     return {
       id: enemy.id,
+      type: enemy.type,
       side: enemy.side,
       height: enemy.height,
       x: enemy.x
+    };
+  },
+  spawnBrawlProjectile(options = {}) {
+    const projectile = createBrawlProjectile(
+      {
+        id: options.sourceId || `source-${Date.now()}`,
+        side: options.side || "left",
+        height: options.height || "mid"
+      },
+      options
+    );
+    return {
+      id: projectile.id,
+      sourceId: projectile.sourceId,
+      x: projectile.x,
+      y: projectile.y,
+      reflected: projectile.reflected
     };
   },
   performBrawlMove,
@@ -2434,10 +2792,20 @@ window.__arcadeTest = {
       combo: brawlState.combo,
       wave: brawlState.wave,
       dangerMultiplier: brawlState.dangerMultiplier,
+      projectiles: brawlState.projectiles.map((projectile) => ({
+        id: projectile.id,
+        sourceId: projectile.sourceId,
+        sourceSide: projectile.sourceSide,
+        x: projectile.x,
+        y: projectile.y,
+        reflected: projectile.reflected
+      })),
       enemies: brawlState.enemies.map((enemy) => ({
         id: enemy.id,
+        type: enemy.type,
         side: enemy.side,
         height: enemy.height,
+        state: enemy.state,
         x: enemy.x
       }))
     };

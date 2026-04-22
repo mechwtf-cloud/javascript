@@ -69,7 +69,7 @@ test("echo reactor clears a round and fails on a wrong answer", async ({ page })
   await expect(page.locator("#echoOverlayTitle")).toHaveText("Reactor Down");
 });
 
-test("neon brawl rewards the right counter and loses on a bad read", async ({ page }) => {
+test("neon brawl counters melee, reflects weapons, and loses on bad reads", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Play Neon Brawl" }).click();
 
@@ -94,11 +94,38 @@ test("neon brawl rewards the right counter and loses on a bad read", async ({ pa
 
   await page.evaluate(() => {
     const arena = document.getElementById("brawlArena");
+    const thrower = window.__arcadeTest.spawnBrawlEnemy({
+      side: "left",
+      type: "thrower",
+      x: arena.clientWidth / 2 - 220,
+      speed: 0,
+      state: "windup",
+      attackTimer: 0.5
+    });
+
+    window.__arcadeTest.spawnBrawlProjectile({
+      side: "left",
+      sourceId: thrower.id,
+      x: arena.clientWidth / 2 - 72,
+      y: arena.clientHeight * 0.56,
+      velocityX: 0
+    });
+  });
+
+  await page.keyboard.press("ArrowLeft");
+
+  await expect
+    .poll(async () => page.evaluate(() => window.__arcadeTest.getBrawlState().projectiles[0]?.reflected ?? false))
+    .toBe(true);
+
+  await page.evaluate(() => {
+    const arena = document.getElementById("brawlArena");
     window.__arcadeTest.clearBrawlEnemies();
+    window.__arcadeTest.clearBrawlProjectiles();
     window.__arcadeTest.setBrawlState({ running: true, health: 12, combo: 0, score: 0, wave: 1 });
     window.__arcadeTest.spawnBrawlEnemy({
       side: "left",
-      height: "mid",
+      type: "striker",
       x: arena.clientWidth / 2 - 100,
       speed: 0
     });
