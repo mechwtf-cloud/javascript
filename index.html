@@ -17,6 +17,7 @@
     </div>
 
     <div class="topbar-actions">
+      <button id="musicButton" class="ghost-button music-button" type="button" aria-pressed="true">Music: On</button>
       <span id="viewLabel" class="view-label">Choose a mode</span>
       <button id="menuButton" class="ghost-button hidden" type="button">Back to Menu</button>
     </div>
@@ -27,10 +28,11 @@
       <div class="menu-shell">
         <section class="menu-hero hero-panel">
           <p class="eyebrow">Pick Your Challenge</p>
-          <h2 class="section-title">Two games, one neon dashboard.</h2>
+          <h2 class="section-title">Three games, one neon dashboard.</h2>
           <p class="headline">
-            Jump into an easier four-key rhythm flow or race through a typing sprint.
-            Both modes live in the same arcade, so you can swap between them from the menu any time.
+            Lock in on a harder four-key rhythm run, race through a typing sprint,
+            or survive a glowing memory gauntlet. Every mode shares the same arcade,
+            soundtrack, and quick swap menu.
           </p>
         </section>
 
@@ -38,7 +40,7 @@
           <article class="mode-card mode-card-rhythm">
             <p class="card-tag">Rhythm</p>
             <h3>Pulse Grid</h3>
-            <p>Ride glowing notes across a chill four-key lane set with no lives and a smoother tempo ramp.</p>
+            <p>Catch the right lane or lose shield. Chain clean hits, survive the speed ramp, and keep your run alive.</p>
             <button class="primary-button" type="button" data-view="rhythm">Play Pulse Grid</button>
           </article>
 
@@ -47,6 +49,13 @@
             <h3>Word Rush</h3>
             <p>Get a fresh text prompt and type it as fast and as accurately as you can.</p>
             <button class="primary-button" type="button" data-view="typing">Play Word Rush</button>
+          </article>
+
+          <article class="mode-card mode-card-echo">
+            <p class="card-tag">Memory</p>
+            <h3>Echo Reactor</h3>
+            <p>Watch the pad sequence, repeat it from memory, and hold your nerve as the pace keeps climbing.</p>
+            <button class="primary-button" type="button" data-view="echo">Play Echo Reactor</button>
           </article>
         </section>
       </div>
@@ -63,6 +72,10 @@
             <article class="stat-card">
               <span class="stat-label">Score</span>
               <strong id="rhythmScore">0</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Shield</span>
+              <strong id="rhythmShield">100%</strong>
             </article>
             <article class="stat-card">
               <span class="stat-label">Combo</span>
@@ -98,6 +111,61 @@
               <div>
                 <h3 id="rhythmOverlayTitle">Pulse Grid</h3>
                 <p id="rhythmOverlayText">Press SPACE to launch an endless run with W, A, S, and D.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="echoView" class="view">
+      <div class="view-shell">
+        <section class="hero-panel echo-panel">
+          <p class="eyebrow">Memory Mode</p>
+          <h2 class="section-title">Echo Reactor</h2>
+          <p id="echoInfo" class="headline">Press SPACE to start. Use the arrow keys or tap the pads to repeat the sequence before the reactor outruns you.</p>
+
+          <div class="stats-grid">
+            <article class="stat-card">
+              <span class="stat-label">Round</span>
+              <strong id="echoRound">0</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Score</span>
+              <strong id="echoScore">0</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Lives</span>
+              <strong id="echoLives">3</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Streak</span>
+              <strong id="echoStreak">0</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Pace</span>
+              <strong id="echoPace">1.0x</strong>
+            </article>
+          </div>
+
+          <div class="status-strip">
+            <div id="echoFeedback" class="feedback-text">Ready</div>
+            <div id="echoHint" class="combo-text">Watch the pattern first, then play it back one pulse at a time.</div>
+          </div>
+
+          <div class="typing-actions">
+            <button id="echoStartButton" class="primary-button" type="button">Start Reactor</button>
+            <button id="echoReplayButton" class="ghost-button" type="button">Replay Sequence (-1 life)</button>
+          </div>
+        </section>
+
+        <section class="board-shell">
+          <div id="echoBoard" class="echo-board" aria-label="Echo Reactor pads">
+            <div id="echoPadGrid" class="echo-pad-grid"></div>
+            <div id="echoOverlay" class="board-overlay">
+              <div>
+                <h3 id="echoOverlayTitle">Echo Reactor</h3>
+                <p id="echoOverlayText">Press SPACE or Start Reactor to begin. Repeat the glowing sequence with the arrow keys or by tapping the pads.</p>
               </div>
             </div>
           </div>
